@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 function PortalCards() {
   return (
     <section id="portal" style={styles.container}>
@@ -8,7 +9,9 @@ function PortalCards() {
         <div style={styles.card}>
           <h3>👤 Patient</h3>
           <p>Book appointments and view prescriptions</p>
-          <button>Enter</button>
+          <Link to="/patient-login">
+            <button>Enter</button>
+          </Link>
         </div>
 
         <div style={styles.card}>
