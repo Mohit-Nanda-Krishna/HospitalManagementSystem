@@ -28,9 +28,9 @@ function PortalCards() {
         <article className="portal-card">
           <h3>Admin Portal</h3>
           <p>Monitor system activity, user roles, and operational performance.</p>
-          <button type="button" className="card-action ghost" disabled>
-            Coming Soon
-          </button>
+          <Link to="/admin" className="card-action">
+            Enter Portal
+          </Link>
         </article>
       </div>
     </section>
