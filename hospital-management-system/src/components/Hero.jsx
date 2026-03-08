@@ -1,48 +1,52 @@
 function Hero() {
   return (
-    <section style={styles.hero}>
-      <div style={styles.left}>
-        <h1>Hospital Management System</h1>
+    <section className="hero-section">
+      <div className="hero-content">
+        <span className="hero-kicker">Trusted Healthcare Operations Platform</span>
+        <h1>Hospital Management System Built for Speed and Reliability</h1>
         <p>
-          A modern platform to manage patients, doctors, appointments
-          and medical records efficiently.
+          Unify patient records, appointments, doctor schedules, and admin workflows
+          in one secure and intuitive workspace.
         </p>
 
-        <button style={styles.btn}>Get Started</button>
+        <div className="hero-actions">
+          <a className="btn btn-primary" href="#portal">
+            Get Started
+          </a>
+          <a className="btn btn-secondary" href="#features">
+            Explore Features
+          </a>
+        </div>
+
+        <div className="hero-metrics">
+          <div>
+            <strong>24/7</strong>
+            <span>Operations Ready</span>
+          </div>
+          <div>
+            <strong>Secure</strong>
+            <span>Role-Based Access</span>
+          </div>
+          <div>
+            <strong>Fast</strong>
+            <span>Appointment Flow</span>
+          </div>
+        </div>
       </div>
 
-      <div>
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/3774/3774299.png"
-          width="350"
-        />
+      <div className="hero-visual" aria-hidden="true">
+        <div className="hero-panel">
+          <p>Live Snapshot</p>
+          <h3>128 Appointments Today</h3>
+          <ul>
+            <li>18 doctors online</li>
+            <li>42 reports updated</li>
+            <li>0 critical alerts pending</li>
+          </ul>
+        </div>
       </div>
     </section>
   );
 }
-
-const styles = {
-  hero: {
-    display: "flex",
-    justifyContent: "space-around",
-    alignItems: "center",
-    padding: "80px 20px",
-    background: "linear-gradient(to right,#DBEAFE,#F8FAFC)",
-  },
-
-  left: {
-    maxWidth: "500px",
-  },
-
-  btn: {
-    marginTop: "20px",
-    padding: "12px 25px",
-    background: "#2563EB",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-  },
-};
 
 export default Hero;

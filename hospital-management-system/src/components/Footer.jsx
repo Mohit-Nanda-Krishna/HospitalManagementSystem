@@ -1,20 +1,15 @@
 function Footer() {
   return (
-    <footer style={styles.footer}>
-      <p>Hospital Management System</p>
-      <p>VIT Vellore Project</p>
-      <p>© 2026</p>
+    <footer className="home-footer">
+      <div className="home-footer-content">
+        <div>
+          <h4>HMS Care</h4>
+          <p>A professional hospital management experience for modern teams.</p>
+        </div>
+        <p>VIT Vellore Project | 2026</p>
+      </div>
     </footer>
   );
 }
-
-const styles = {
-  footer: {
-    textAlign: "center",
-    padding: "20px",
-    background: "#1F2937",
-    color: "white",
-  },
-};
 
 export default Footer;

@@ -1,56 +1,40 @@
 import { Link } from "react-router-dom";
+
 function PortalCards() {
   return (
-    <section id="portal" style={styles.container}>
-      <h2>Choose Your Portal</h2>
+    <section id="portal" className="portal-section">
+      <div className="section-head">
+        <h2>Choose Your Portal</h2>
+        <p>Role-specific access for patients, doctors, and administrators.</p>
+      </div>
 
-      <div style={styles.cards}>
-
-        <div style={styles.card}>
-          <h3>👤 Patient</h3>
-          <p>Book appointments and view prescriptions</p>
-          <Link to="/patient-login">
-            <button>Enter</button>
+      <div className="portal-grid">
+        <article className="portal-card">
+          <h3>Patient Portal</h3>
+          <p>Book appointments, track prescriptions, and manage profile details.</p>
+          <Link to="/patient-login" className="card-action">
+            Enter Portal
           </Link>
-        </div>
+        </article>
 
-        <div style={styles.card}>
-          <h3>🩺 Doctor</h3>
-          <p>Manage patients and appointments</p>
-          <button>Enter</button>
-        </div>
+        <article className="portal-card">
+          <h3>Doctor Portal</h3>
+          <p>Review schedules, patient history, and daily consultation updates.</p>
+          <button type="button" className="card-action ghost" disabled>
+            Coming Soon
+          </button>
+        </article>
 
-        <div style={styles.card}>
-          <h3>⚙ Admin</h3>
-          <p>Control system and manage users</p>
-          <button>Enter</button>
-        </div>
-
+        <article className="portal-card">
+          <h3>Admin Portal</h3>
+          <p>Monitor system activity, user roles, and operational performance.</p>
+          <button type="button" className="card-action ghost" disabled>
+            Coming Soon
+          </button>
+        </article>
       </div>
     </section>
   );
 }
-
-const styles = {
-  container: {
-    textAlign: "center",
-    padding: "60px 20px",
-  },
-
-  cards: {
-    display: "flex",
-    justifyContent: "center",
-    gap: "30px",
-    marginTop: "30px",
-  },
-
-  card: {
-    background: "white",
-    padding: "30px",
-    width: "250px",
-    borderRadius: "10px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-  },
-};
 
 export default PortalCards;

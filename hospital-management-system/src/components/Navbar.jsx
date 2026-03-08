@@ -1,31 +1,20 @@
 function Navbar() {
   return (
-    <nav style={styles.nav}>
-      <h2>🏥 HMS</h2>
+    <header className="home-header">
+      <nav className="home-nav">
+        <a className="home-brand" href="#">
+          <span className="home-brand-dot">+</span>
+          HMS Care
+        </a>
 
-      <div style={styles.links}>
-        <a href="#">Home</a>
-        <a href="#features">Features</a>
-        <a href="#portal">Login</a>
-      </div>
-    </nav>
+        <div className="home-nav-links">
+          <a href="#">Home</a>
+          <a href="#features">Features</a>
+          <a href="#portal">Portals</a>
+        </div>
+      </nav>
+    </header>
   );
 }
-
-const styles = {
-  nav: {
-    display: "flex",
-    justifyContent: "space-between",
-    padding: "15px 40px",
-    background: "white",
-    boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-    position: "sticky",
-    top: 0,
-  },
-  links: {
-    display: "flex",
-    gap: "20px",
-  },
-};
 
 export default Navbar;

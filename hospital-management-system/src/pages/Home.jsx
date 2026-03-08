@@ -3,17 +3,17 @@ import Hero from "../components/Hero";
 import PortalCards from "../components/PortalCards";
 import Features from "../components/Features";
 import Footer from "../components/Footer";
-import { Link } from "react-router-dom";
+import "../styles/home.css";
 
 function Home() {
   return (
-    <>
+    <div className="home-page">
       <Navbar />
       <Hero />
       <PortalCards />
       <Features />
       <Footer />
-    </>
+    </div>
   );
 }
 

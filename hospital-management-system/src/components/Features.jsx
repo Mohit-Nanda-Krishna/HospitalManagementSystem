@@ -1,32 +1,40 @@
 function Features() {
-  return (
-    <section id="features" style={styles.section}>
-      <h2>Why Use HMS?</h2>
+  const featureItems = [
+    {
+      title: "Fast Appointment Booking",
+      text: "Reduce waiting time with a streamlined scheduling flow.",
+    },
+    {
+      title: "Secure Medical Records",
+      text: "Keep patient data protected with structured access control.",
+    },
+    {
+      title: "Doctor Management",
+      text: "Manage doctor availability, consultations, and follow-ups.",
+    },
+    {
+      title: "Admin Dashboard",
+      text: "Track system activity and operational metrics in one place.",
+    },
+  ];
 
-      <div style={styles.grid}>
-        <div>⚡ Fast Appointment Booking</div>
-        <div>🔒 Secure Medical Records</div>
-        <div>👨‍⚕️ Doctor Management</div>
-        <div>📊 Admin Dashboard</div>
+  return (
+    <section id="features" className="features-section">
+      <div className="section-head">
+        <h2>Why Teams Use HMS</h2>
+        <p>Everything required to run hospital workflows with clarity and control.</p>
+      </div>
+
+      <div className="feature-grid">
+        {featureItems.map((item) => (
+          <article className="feature-card" key={item.title}>
+            <h3>{item.title}</h3>
+            <p>{item.text}</p>
+          </article>
+        ))}
       </div>
     </section>
   );
 }
-
-const styles = {
-  section: {
-    background: "#F8FAFC",
-    padding: "60px",
-    textAlign: "center",
-  },
-
-  grid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, 200px)",
-    justifyContent: "center",
-    gap: "20px",
-    marginTop: "30px",
-  },
-};
 
 export default Features;
