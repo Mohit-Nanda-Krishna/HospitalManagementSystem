@@ -4,7 +4,7 @@ function Navbar() {
       <nav className="home-nav">
         <a className="home-brand" href="#">
           <span className="home-brand-dot">+</span>
-          HMS Care
+          VIT Hospital Management System
         </a>
 
         <div className="home-nav-links">

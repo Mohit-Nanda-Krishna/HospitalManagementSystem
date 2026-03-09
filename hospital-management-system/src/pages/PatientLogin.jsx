@@ -23,7 +23,7 @@ function PatientLogin() {
     setGoogleLoading(true);
     try {
       await signInWithPopup(auth, provider);
-      navigate("/");
+      navigate("/patient-dashboard");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -38,7 +38,7 @@ function PatientLogin() {
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/");
+      navigate("/patient-dashboard");
     } catch (err) {
       setError(err.message);
     } finally {

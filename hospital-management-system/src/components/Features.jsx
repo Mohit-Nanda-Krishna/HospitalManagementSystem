@@ -21,8 +21,8 @@ function Features() {
   return (
     <section id="features" className="features-section">
       <div className="section-head">
-        <h2>Why Teams Use HMS</h2>
-        <p>Everything required to run hospital workflows with clarity and control.</p>
+        <h2>Why Use our HMS</h2>
+        <p>Everything required to run hospital workflows with efficiency and control.</p>
       </div>
 
       <div className="feature-grid">

@@ -53,12 +53,12 @@
 }
 
 .home-brand-dot {
-  width: 1.45rem;
-  height: 1.45rem;
+  width: 1.6rem;
+  height: 1.6rem;
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
-  background: linear-gradient(135deg, var(--primary), #3aa9ff);
+  background: linear-gradient(135deg, rgb(250, 36, 36), #b61a02);
   color: #fff;
   font-weight: 700;
 }
@@ -71,13 +71,13 @@
 
 .home-nav-links a {
   text-decoration: none;
-  color: lightgray;
+  color: white;
   font-weight: 600;
   transition: color 0.2s ease;
 }
 
 .home-nav-links a:hover {
-  color: var(--primary);
+  color: rgb(189, 231, 253);
 }
 
 .hero-section {
@@ -178,8 +178,20 @@
 
 .hero-visual {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  align-items: center;
+  padding-left: 1.5rem;
 }
+
+.hero-visual img {
+  width: min(100%, 620px);
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 35px rgba(12, 42, 88, 0.18));
+}
+
+
 
 .hero-panel {
   width: min(100%, 420px);
@@ -346,6 +358,15 @@
 
   .hero-section {
     padding-top: 3rem;
+  }
+
+  .hero-visual {
+    justify-content: center;
+    padding-left: 0;
+  }
+
+  .hero-visual img {
+    width: min(100%, 500px);
   }
 }
 

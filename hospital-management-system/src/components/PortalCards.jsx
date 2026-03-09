@@ -20,9 +20,9 @@ function PortalCards() {
         <article className="portal-card">
           <h3>Doctor Portal</h3>
           <p>Review schedules, patient history, and daily consultation updates.</p>
-          <button type="button" className="card-action ghost" disabled>
-            Coming Soon
-          </button>
+          <Link to="/doctor-portal" className="card-action">
+            Enter Portal
+          </Link>
         </article>
 
         <article className="portal-card">
@@ -38,3 +38,4 @@ function PortalCards() {
 }
 
 export default PortalCards;
+
