@@ -1,6 +1,7 @@
 import Home from "./pages/Home";
 import PatientLogin from "./pages/PatientLogin";
 import PatientSignup from "./pages/PatientSignup";
+import PatientVitals from "./pages/PatientVitals";
 import PatientDashboard from "./pages/PatientDashboard";
 import AdminPanel from "./pages/Admin";
 import DoctorPortal from "./pages/DoctorPortal";
@@ -12,6 +13,7 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/patient-login" element={<PatientLogin />} />
       <Route path="/patient-signup" element={<PatientSignup />} />
+      <Route path="/patient-vitals" element={<PatientVitals />} />
       <Route path="/patient-dashboard" element={<PatientDashboard />} />
       <Route path="/admin" element={<AdminPanel />} />
       <Route path="/doctor-portal" element={<DoctorPortal />} />

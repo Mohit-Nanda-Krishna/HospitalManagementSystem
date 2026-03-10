@@ -3,7 +3,7 @@ function Hero() {
   return (
     <section className="hero-section">
       <div className="hero-content">
-        <span className="hero-kicker">Trusted Efficent Healthcare Operations Platform</span>
+        <span className="hero-kicker">Trusted & Efficent Healthcare Operations Platform</span>
         <h1>Hospital Management System Built for Speed and Reliability</h1>
         <p>
           Unify patient records, appointments, doctor schedules, and admin workflows

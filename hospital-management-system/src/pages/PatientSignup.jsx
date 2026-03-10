@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import "../styles/auth.css";
 
 function PatientSignup() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,8 +27,14 @@ function PatientSignup() {
     setLoading(true);
 
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      navigate("/patient-login");
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email || email,
+        role: "patient",
+        profileCompleted: false,
+        createdAt: serverTimestamp(),
+      });
+      navigate("/patient-vitals");
     } catch (err) {
       setError(err.message);
     } finally {
@@ -63,6 +71,16 @@ function PatientSignup() {
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <label htmlFor="signup-name">Full Name</label>
+            <input
+              id="signup-name"
+              type="text"
+              placeholder="Your full name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               required
             />
 

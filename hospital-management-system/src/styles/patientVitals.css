@@ -1,0 +1,62 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+.vitals-page .auth-shell {
+  width: min(1140px, 100%);
+}
+
+.vitals-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.vitals-form {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.vitals-form label {
+  margin-top: 0.45rem;
+  font-size: 0.93rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.vitals-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.vitals-full {
+  grid-column: 1 / -1;
+}
+
+.vitals-form input,
+.vitals-form select,
+.vitals-form textarea {
+  width: 100%;
+  padding: 0.82rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--auth-line);
+  outline: none;
+  font: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background: #fff;
+}
+
+.vitals-form textarea {
+  resize: vertical;
+}
+
+.vitals-form input:focus,
+.vitals-form select:focus,
+.vitals-form textarea:focus {
+  border-color: var(--auth-primary);
+  box-shadow: 0 0 0 3px rgba(11, 99, 246, 0.16);
+}
+
+@media (max-width: 900px) {
+  .vitals-grid {
+    grid-template-columns: 1fr;
+  }
+}

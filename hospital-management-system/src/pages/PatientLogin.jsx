@@ -1,11 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { auth } from "../firebase";
+import { auth, db } from "../firebase";
 import {
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   signInWithPopup,
 } from "firebase/auth";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  query,
+  serverTimestamp,
+  where,
+} from "firebase/firestore";
 import "../styles/auth.css";
 
 function PatientLogin() {
@@ -18,12 +26,40 @@ function PatientLogin() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const routeAfterLogin = async (user) => {
+    const patientQuery = query(
+      collection(db, "patients"),
+      where("uid", "==", user.uid)
+    );
+    const patientSnap = await getDocs(patientQuery);
+
+    if (patientSnap.empty) {
+      await addDoc(collection(db, "patients"), {
+        uid: user.uid,
+        name: user.displayName || "",
+        email: user.email || "",
+        role: "patient",
+        vitalsCompleted: false,
+        createdAt: serverTimestamp(),
+      });
+      navigate("/patient-vitals");
+      return;
+    }
+
+    const patientData = patientSnap.docs[0].data();
+    if (patientData?.vitalsCompleted) {
+      navigate("/patient-dashboard");
+    } else {
+      navigate("/patient-vitals");
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setError("");
     setGoogleLoading(true);
     try {
-      await signInWithPopup(auth, provider);
-      navigate("/patient-dashboard");
+      const { user } = await signInWithPopup(auth, provider);
+      await routeAfterLogin(user);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -37,8 +73,8 @@ function PatientLogin() {
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      navigate("/patient-dashboard");
+      const { user } = await signInWithEmailAndPassword(auth, email, password);
+      await routeAfterLogin(user);
     } catch (err) {
       setError(err.message);
     } finally {
