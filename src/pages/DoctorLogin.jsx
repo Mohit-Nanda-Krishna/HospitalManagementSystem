@@ -37,7 +37,6 @@ function DoctorLogin() {
         const userData = docSnap.data();
 
         if (userData.role === "admin") {
-          navigate("/admin-dashboard", { replace: true });
           return;
         }
 

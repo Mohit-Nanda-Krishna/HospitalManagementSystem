@@ -20,7 +20,7 @@ function PortalCards() {
         <article className="portal-card">
           <h3>Doctor Portal</h3>
           <p>Review schedules, patient history, and daily consultation updates.</p>
-          <Link to="/doctor-portal" className="card-action">
+          <Link to="/doctor-login" className="card-action">
             Enter Portal
           </Link>
         </article>

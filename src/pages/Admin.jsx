@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
+  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -39,6 +40,34 @@ const initialBeds = [
   { id: "BED-07", ward: "Private", patient: "Rohan Verma", status: "Occupied", bedType: "Premium" },
   { id: "BED-08", ward: "General", patient: "", status: "Available", bedType: "Standard" },
 ];
+
+const DAY_OPTIONS = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+function formatTimeLabel(timeValue) {
+  if (!timeValue) {
+    return "";
+  }
+
+  const [rawHours, rawMinutes] = timeValue.split(":");
+  const hours = Number(rawHours);
+  const minutes = rawMinutes || "00";
+  const suffix = hours >= 12 ? "PM" : "AM";
+  const normalizedHours = hours % 12 || 12;
+
+  return `${String(normalizedHours).padStart(2, "0")}:${minutes} ${suffix}`;
+}
+
+function normalizePhoneNumber(phoneValue) {
+  return String(phoneValue || "").replace(/\D/g, "").slice(0, 10);
+}
 
 const inventoryData = [
   { item: "N95 Masks", remaining: 42, threshold: 60, vendor: "MediSafe Supplies" },
@@ -184,8 +213,11 @@ function AdminPanel() {
     email: "",
     password: "",
     phone: "",
-    availability: "",
-    timeSlots: "",
+    availabilityFromDay: "",
+    availabilityToDay: "",
+    slotStart: "",
+    slotEnd: "",
+    timeSlots: [],
   });
   const [patientForm, setPatientForm] = useState({
     name: "",
@@ -386,13 +418,15 @@ function AdminPanel() {
       email,
       password,
       phone,
-      availability,
+      availabilityFromDay,
+      availabilityToDay,
       timeSlots,
     } = doctorForm;
-    const parsedTimeSlots = timeSlots
-      .split(",")
-      .map((slot) => slot.trim())
-      .filter(Boolean);
+    const parsedTimeSlots = Array.isArray(timeSlots) ? timeSlots.filter(Boolean) : [];
+    const availability = availabilityFromDay && availabilityToDay
+      ? `${availabilityFromDay} - ${availabilityToDay}`
+      : "";
+    const normalizedPhone = normalizePhoneNumber(phone);
 
     if (
       !name.trim() ||
@@ -403,6 +437,11 @@ function AdminPanel() {
       setDoctorError(
         "Enter doctor name, email, specialization, and a password of at least 6 characters."
       );
+      return;
+    }
+
+    if (normalizedPhone && normalizedPhone.length !== 10) {
+      setDoctorError("Doctor phone number must contain exactly 10 digits.");
       return;
     }
 
@@ -429,7 +468,7 @@ function AdminPanel() {
         name: name.trim(),
         specialization: [specialization.trim()],
         email: normalizedEmail,
-        phone: phone.trim(),
+        phone: normalizedPhone,
         availability: availability.trim(),
         timeSlots: parsedTimeSlots,
         approved: true,
@@ -465,8 +504,11 @@ function AdminPanel() {
         email: "",
         password: "",
         phone: "",
-        availability: "",
-        timeSlots: "",
+        availabilityFromDay: "",
+        availabilityToDay: "",
+        slotStart: "",
+        slotEnd: "",
+        timeSlots: [],
       });
       setDoctorError("");
     } catch (error) {
@@ -485,11 +527,12 @@ function AdminPanel() {
     event.preventDefault();
     const { name, age, gender, phone, address, bloodGroup, condition } =
       patientForm;
+    const normalizedPhone = normalizePhoneNumber(phone);
 
     if (
       !name.trim() ||
       !age ||
-      !phone.trim() ||
+      !normalizedPhone ||
       !address.trim() ||
       !bloodGroup.trim() ||
       !condition.trim()
@@ -500,6 +543,11 @@ function AdminPanel() {
       return;
     }
 
+    if (normalizedPhone.length !== 10) {
+      setPatientError("Patient phone number must contain exactly 10 digits.");
+      return;
+    }
+
     try {
       const patientRef = doc(collection(db, "patients"));
       const payload = {
@@ -507,7 +555,7 @@ function AdminPanel() {
         name: name.trim(),
         age: Number(age),
         gender,
-        phone: phone.trim(),
+        phone: normalizedPhone,
         address: address.trim(),
         bloodGroup: bloodGroup.trim().toUpperCase(),
         condition: condition.trim(),
@@ -631,7 +679,7 @@ function AdminPanel() {
 
   const handleDeleteDoctor = async (doctor) => {
     const confirmed = window.confirm(
-      `Delete ${doctor.name} and all linked appointments?`
+      `Delete ${doctor.name} and all linked Firestore records?`
     );
 
     if (!confirmed) {
@@ -646,12 +694,33 @@ function AdminPanel() {
       const appointmentSnap = await getDocs(appointmentQuery);
       await Promise.all(appointmentSnap.docs.map((item) => deleteDoc(item.ref)));
 
-      const userQuery = query(
+      const prescriptionQuery = query(
+        collection(db, "prescriptions"),
+        where("doctorId", "==", doctor.id)
+      );
+      const prescriptionSnap = await getDocs(prescriptionQuery);
+      await Promise.all(prescriptionSnap.docs.map((item) => deleteDoc(item.ref)));
+
+      const userQueryByEmail = query(
         collection(db, "users"),
         where("email", "==", (doctor.email || "").toLowerCase())
       );
-      const userSnap = await getDocs(userQuery);
-      await Promise.all(userSnap.docs.map((item) => deleteDoc(item.ref)));
+      const userQueryByDoctorId = query(
+        collection(db, "users"),
+        where("doctorId", "==", doctor.id)
+      );
+      const [userSnapByEmail, userSnapByDoctorId] = await Promise.all([
+        getDocs(userQueryByEmail),
+        getDocs(userQueryByDoctorId),
+      ]);
+      const userRefs = [
+        ...userSnapByEmail.docs.map((item) => item.ref),
+        ...userSnapByDoctorId.docs.map((item) => item.ref),
+      ].reduce((refs, ref) => {
+        refs.set(ref.path, ref);
+        return refs;
+      }, new Map());
+      await Promise.all([...userRefs.values()].map((ref) => deleteDoc(ref)));
 
       await deleteDoc(doc(db, "doctors", doctor.id));
 
@@ -659,10 +728,44 @@ function AdminPanel() {
       setAppointments((current) =>
         current.filter((item) => item.doctorId !== doctor.id)
       );
+      setPrescriptions((current) =>
+        current.filter((item) => item.doctorId !== doctor.id)
+      );
     } catch (error) {
       console.error("Failed to delete doctor", error);
       setDoctorError("Unable to delete doctor from Firestore.");
     }
+  };
+
+  const handleAddDoctorTimeSlot = () => {
+    if (!doctorForm.slotStart || !doctorForm.slotEnd) {
+      setDoctorError("Select both slot start and slot end times.");
+      return;
+    }
+
+    if (doctorForm.slotStart >= doctorForm.slotEnd) {
+      setDoctorError("Slot end time must be later than the start time.");
+      return;
+    }
+
+    const nextSlot = `${formatTimeLabel(doctorForm.slotStart)} - ${formatTimeLabel(doctorForm.slotEnd)}`;
+
+    setDoctorForm((current) => ({
+      ...current,
+      timeSlots: current.timeSlots.includes(nextSlot)
+        ? current.timeSlots
+        : [...current.timeSlots, nextSlot],
+      slotStart: "",
+      slotEnd: "",
+    }));
+    setDoctorError("");
+  };
+
+  const handleRemoveDoctorTimeSlot = (slotToRemove) => {
+    setDoctorForm((current) => ({
+      ...current,
+      timeSlots: current.timeSlots.filter((slot) => slot !== slotToRemove),
+    }));
   };
 
   const handleLogout = async () => {
@@ -952,43 +1055,102 @@ function AdminPanel() {
                   <input
                     id="doctor-phone"
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     value={doctorForm.phone}
                     onChange={(event) =>
                       setDoctorForm((current) => ({
                         ...current,
-                        phone: event.target.value,
+                        phone: normalizePhoneNumber(event.target.value),
                       }))
                     }
-                    placeholder="+91 98765 43210"
+                    placeholder="9876543210"
                   />
 
                   <label htmlFor="doctor-availability">Availability</label>
-                  <input
-                    id="doctor-availability"
-                    type="text"
-                    value={doctorForm.availability}
-                    onChange={(event) =>
-                      setDoctorForm((current) => ({
-                        ...current,
-                        availability: event.target.value,
-                      }))
-                    }
-                    placeholder="Mon - Fri, 10:00 - 16:00"
-                  />
+                  <div className="admin-inline-time-grid">
+                    <select
+                      id="doctor-availability"
+                      value={doctorForm.availabilityFromDay}
+                      onChange={(event) =>
+                        setDoctorForm((current) => ({
+                          ...current,
+                          availabilityFromDay: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">From day</option>
+                      {DAY_OPTIONS.map((day) => (
+                        <option key={day} value={day}>
+                          {day}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={doctorForm.availabilityToDay}
+                      onChange={(event) =>
+                        setDoctorForm((current) => ({
+                          ...current,
+                          availabilityToDay: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">To day</option>
+                      {DAY_OPTIONS.map((day) => (
+                        <option key={day} value={day}>
+                          {day}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
                   <label htmlFor="doctor-time-slots">Time slots</label>
-                  <input
-                    id="doctor-time-slots"
-                    type="text"
-                    value={doctorForm.timeSlots}
-                    onChange={(event) =>
-                      setDoctorForm((current) => ({
-                        ...current,
-                        timeSlots: event.target.value,
-                      }))
-                    }
-                    placeholder="09:00 AM - 11:00 AM, 11:30 AM - 01:30 PM"
-                  />
+                  <div className="admin-inline-time-grid">
+                    <input
+                      id="doctor-time-slots"
+                      type="time"
+                      value={doctorForm.slotStart}
+                      onChange={(event) =>
+                        setDoctorForm((current) => ({
+                          ...current,
+                          slotStart: event.target.value,
+                        }))
+                      }
+                    />
+                    <input
+                      type="time"
+                      value={doctorForm.slotEnd}
+                      onChange={(event) =>
+                        setDoctorForm((current) => ({
+                          ...current,
+                          slotEnd: event.target.value,
+                        }))
+                      }
+                    />
+                    <button
+                      className="admin-btn secondary"
+                      onClick={handleAddDoctorTimeSlot}
+                      type="button"
+                    >
+                      Add Slot
+                    </button>
+                  </div>
+                  {doctorForm.timeSlots.length ? (
+                    <div className="admin-slot-list">
+                      {doctorForm.timeSlots.map((slot) => (
+                        <button
+                          key={slot}
+                          className="admin-slot-chip"
+                          onClick={() => handleRemoveDoctorTimeSlot(slot)}
+                          type="button"
+                        >
+                          {slot} ×
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="admin-field-hint">Pick a start and end time, then add one or more slots.</p>
+                  )}
 
                   {doctorError ? <p className="admin-form-error">{doctorError}</p> : null}
 
@@ -1095,11 +1257,16 @@ function AdminPanel() {
                   <input
                     id="patient-phone"
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     value={patientForm.phone}
                     onChange={(event) =>
-                      setPatientForm((current) => ({ ...current, phone: event.target.value }))
+                      setPatientForm((current) => ({
+                        ...current,
+                        phone: normalizePhoneNumber(event.target.value),
+                      }))
                     }
-                    placeholder="+91 98765 43210"
+                    placeholder="9876543210"
                   />
 
                   <label htmlFor="patient-address">Address</label>
