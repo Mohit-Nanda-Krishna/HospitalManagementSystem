@@ -37,7 +37,7 @@ function AdminSignup() {
         createdAt: serverTimestamp(),
       });
       
-      navigate("/admin");
+      navigate("/admin/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {

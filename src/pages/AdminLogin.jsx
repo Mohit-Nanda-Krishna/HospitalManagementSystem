@@ -37,7 +37,7 @@ function AdminLogin() {
         return;
       }
 
-      navigate("/admin");
+      navigate("/admin/dashboard");
     } catch (err) {
       setError(err.message);
     } finally {

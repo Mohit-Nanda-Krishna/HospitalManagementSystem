@@ -9,7 +9,12 @@ import DoctorLogin from "./pages/DoctorLogin";
 import DoctorSignup from "./pages/DoctorSignup";
 import AdminLogin from "./pages/AdminLogin";
 import AdminSignup from "./pages/AdminSignup";
-import { Routes, Route } from "react-router-dom";
+import { auth } from "./firebase";
+import { Navigate, Routes, Route } from "react-router-dom";
+
+function ProtectedAdminRoute({ children }) {
+  return auth.currentUser ? children : <Navigate to="/admin-login" replace />;
+}
 
 function App() {
   return (
@@ -19,9 +24,17 @@ function App() {
       <Route path="/patient-signup" element={<PatientSignup />} />
       <Route path="/patient-vitals" element={<PatientVitals />} />
       <Route path="/patient-dashboard" element={<PatientDashboard />} />
-      <Route path="/admin" element={<AdminPanel />} />
+      <Route path="/admin" element={<Navigate to="/admin-login" replace />} />
       <Route path="/admin-login" element={<AdminLogin />} />
       <Route path="/admin-signup" element={<AdminSignup />} />
+      <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedAdminRoute>
+            <AdminPanel />
+          </ProtectedAdminRoute>
+        }
+      />
       <Route path="/doctor-portal" element={<DoctorPortal />} />
       <Route path="/doctor-login" element={<DoctorLogin />} />
       <Route path="/doctor-signup" element={<DoctorSignup />} />

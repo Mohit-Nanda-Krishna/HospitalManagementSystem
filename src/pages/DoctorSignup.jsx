@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, serverTimestamp, setDoc, getDoc } from "firebase/firestore";
+import { collection, doc, serverTimestamp, setDoc, getDoc, getDocs } from "firebase/firestore";
 import "../styles/auth.css";
 
 function DoctorSignup() {
@@ -13,18 +13,40 @@ function DoctorSignup() {
   const [fullName, setFullName] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [accessKey, setAccessKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const findDoctorProfileByEmail = async (emailAddress) => {
+    const doctorSnap = await getDocs(collection(db, "doctors"));
+    const normalizedEmail = (emailAddress || "").trim().toLowerCase();
+    return doctorSnap.docs
+      .map((item) => ({ id: item.id, ...item.data() }))
+      .find(
+        (doctor) => doctor.email && doctor.email.toLowerCase() === normalizedEmail
+      );
+  };
+
   const routeAfterLogin = async (user) => {
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
+    const doctorProfile = await findDoctorProfileByEmail(user.email);
+
+    if (!doctorProfile) {
+      setError("No admin-approved doctor profile was found for this email.");
+      return;
+    }
+
+    if (doctorProfile.accessKey !== accessKey.trim()) {
+      setError("Invalid 4 digit doctor access key.");
+      return;
+    }
 
     if (!userSnap.exists()) {
       await setDoc(userRef, {
         email: user.email || "",
-        name: user.displayName || "Doctor",
+        name: doctorProfile.name || user.displayName || "Doctor",
         role: "doctor",
         profileCompleted: true,
         createdAt: serverTimestamp(),
@@ -43,6 +65,10 @@ function DoctorSignup() {
 
   const handleGoogleLogin = async () => {
     setError("");
+    if (!/^\d{4}$/.test(accessKey.trim())) {
+      setError("Enter the 4 digit doctor access key.");
+      return;
+    }
     setGoogleLoading(true);
     try {
       const { user } = await signInWithPopup(auth, provider);
@@ -63,13 +89,29 @@ function DoctorSignup() {
       return;
     }
 
+    if (!/^\d{4}$/.test(accessKey.trim())) {
+      setError("Enter the 4 digit doctor access key.");
+      return;
+    }
+
     setLoading(true);
 
     try {
+      const doctorProfile = await findDoctorProfileByEmail(email);
+      if (!doctorProfile) {
+        setError("Admin must create your doctor profile before signup.");
+        return;
+      }
+
+      if (doctorProfile.accessKey !== accessKey.trim()) {
+        setError("Invalid 4 digit doctor access key.");
+        return;
+      }
+
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       await setDoc(doc(db, "users", user.uid), {
         email: user.email || email,
-        name: fullName,
+        name: doctorProfile.name || fullName,
         role: "doctor",
         profileCompleted: false,
         createdAt: serverTimestamp(),
@@ -140,6 +182,20 @@ function DoctorSignup() {
               placeholder="Confirm your password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+
+            <label htmlFor="signup-access-key">4 Digit Access Key</label>
+            <input
+              id="signup-access-key"
+              type="password"
+              inputMode="numeric"
+              maxLength="4"
+              placeholder="Enter the key given by admin"
+              value={accessKey}
+              onChange={(e) =>
+                setAccessKey(e.target.value.replace(/\D/g, "").slice(0, 4))
+              }
               required
             />
 
