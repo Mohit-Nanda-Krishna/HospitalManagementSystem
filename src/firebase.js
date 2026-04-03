@@ -1,5 +1,11 @@
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+import { deleteApp, initializeApp } from "firebase/app";
+import {
+  browserLocalPersistence,
+  createUserWithEmailAndPassword,
+  getAuth,
+  setPersistence,
+  signOut,
+} from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -15,4 +21,27 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export { firebaseConfig };
+
+setPersistence(auth, browserLocalPersistence).catch((error) => {
+  console.error("Failed to enable Firebase auth persistence", error);
+});
+
+export async function createDoctorAuthAccount(email, password) {
+  const secondaryApp = initializeApp(firebaseConfig, `doctor-${Date.now()}`);
+  const secondaryAuth = getAuth(secondaryApp);
+
+  try {
+    const credential = await createUserWithEmailAndPassword(
+      secondaryAuth,
+      email,
+      password
+    );
+
+    await signOut(secondaryAuth);
+    return credential.user;
+  } finally {
+    await deleteApp(secondaryApp);
+  }
+}
 

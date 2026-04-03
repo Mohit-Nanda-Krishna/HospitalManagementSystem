@@ -1,0 +1,743 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
+
+.dd-layout {
+  --dd-bg: #f0f5ff;
+  --dd-surface: #ffffff;
+  --dd-line: #d9e3f4;
+  --dd-text: #10223d;
+  --dd-muted: #5c6f8c;
+  --dd-primary: #0b63f6;
+  --dd-primary-dark: #06006d;
+  --dd-primary-soft: #e7f0ff;
+  --dd-success: #dcfce7;
+  --dd-success-text: #15803d;
+  --dd-warning: #fef3c7;
+  --dd-warning-text: #9a6700;
+  --dd-danger: #fee2e2;
+  --dd-danger-text: #b42318;
+  --dd-shadow: 0 14px 40px rgba(10, 43, 92, 0.12);
+
+  min-height: 100vh;
+  display: flex;
+  background: var(--dd-bg);
+  color: var(--dd-text);
+  font-family: "Manrope", "Segoe UI", sans-serif;
+}
+
+.dd-sidebar {
+  width: 244px;
+  min-height: 100vh;
+  background: var(--dd-primary-dark);
+  color: rgba(255, 255, 255, 0.78);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 200;
+  transition: transform 0.25s ease;
+}
+
+.dd-sidebar-brand,
+.dd-sidebar-doctor,
+.dd-sidebar-footer {
+  padding: 1.15rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dd-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: #fff;
+  font-weight: 800;
+}
+
+.dd-brand-dot,
+.dd-sidebar-avatar,
+.dd-user-avatar {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+}
+
+.dd-brand-dot {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fa2424, #b61a02);
+}
+
+.dd-sidebar-doctor {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dd-sidebar-avatar,
+.dd-user-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--dd-primary), #1984ff);
+}
+
+.dd-sidebar-name,
+.dd-sidebar-role {
+  margin: 0;
+}
+
+.dd-sidebar-name {
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.dd-sidebar-role {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+}
+
+.dd-sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.85rem 0.7rem;
+}
+
+.dd-nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border: none;
+  border-radius: 0.7rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.8rem 0.85rem;
+  text-align: left;
+}
+
+.dd-nav-item:hover,
+.dd-nav-active {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.dd-nav-icon {
+  width: 1.5rem;
+  font-size: 0.72rem;
+  text-align: center;
+  opacity: 0.95;
+}
+
+.dd-nav-logout:hover {
+  background: rgba(220, 38, 38, 0.18);
+  color: #fff1f1;
+}
+
+.dd-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dd-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 64px;
+  padding: 0 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid var(--dd-line);
+  backdrop-filter: blur(14px);
+}
+
+.dd-topbar-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.dd-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.dd-notification-chip,
+.dd-count-chip,
+.dd-mini-badge {
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.dd-notification-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: #eef5ff;
+  color: var(--dd-primary);
+  padding: 0.45rem 0.7rem;
+  font-size: 0.8rem;
+}
+
+.dd-home-link {
+  text-decoration: none;
+  background: rgba(11, 99, 246, 0.1);
+  color: var(--dd-primary);
+  padding: 0.48rem 0.85rem;
+  border-radius: 0.7rem;
+  font-weight: 700;
+}
+
+.dd-user-wrap {
+  position: relative;
+}
+
+.dd-user-avatar {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+}
+
+.dd-user-menu {
+  position: absolute;
+  top: calc(100% + 0.6rem);
+  right: 0;
+  width: 220px;
+  background: #fff;
+  border: 1px solid var(--dd-line);
+  border-radius: 0.9rem;
+  box-shadow: var(--dd-shadow);
+  padding: 0.8rem;
+}
+
+.dd-user-menu strong,
+.dd-user-menu p {
+  display: block;
+}
+
+.dd-user-menu strong {
+  margin-bottom: 0.15rem;
+}
+
+.dd-user-menu p {
+  margin: 0 0 0.7rem;
+  color: var(--dd-muted);
+  font-size: 0.84rem;
+}
+
+.dd-menu-button,
+.dd-link-btn,
+.dd-filter-btn {
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.dd-menu-button {
+  width: 100%;
+  padding: 0.72rem 0.8rem;
+  border-radius: 0.7rem;
+  background: #fff5f5;
+  color: #c81e1e;
+  font-weight: 700;
+}
+
+.dd-content {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+.dd-alert,
+.dd-card {
+  border: 1px solid var(--dd-line);
+  border-radius: 1rem;
+  background: var(--dd-surface);
+  box-shadow: var(--dd-shadow);
+}
+
+.dd-alert {
+  margin-bottom: 1rem;
+  padding: 0.95rem 1rem;
+  background: #fff4f4;
+  color: #b42318;
+}
+
+.dd-welcome-banner {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 1.65rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--dd-primary-dark), #0d40a0);
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.dd-eyebrow,
+.dd-muted-light,
+.dd-banner-note span,
+.dd-detail-block span,
+.dd-form-grid label span {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.dd-eyebrow,
+.dd-muted-light {
+  margin: 0;
+}
+
+.dd-welcome-banner h2 {
+  margin: 0.35rem 0;
+  font-size: 1.7rem;
+}
+
+.dd-muted-light {
+  color: rgba(255, 255, 255, 0.72);
+  max-width: 540px;
+  line-height: 1.6;
+}
+
+.dd-banner-note {
+  min-width: 190px;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.dd-banner-note span,
+.dd-banner-note strong {
+  display: block;
+}
+
+.dd-banner-note strong {
+  margin-top: 0.35rem;
+  font-size: 1rem;
+}
+
+.dd-stats-grid,
+.dd-two-column,
+.dd-details-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.dd-stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.dd-stat-card,
+.dd-patient-row {
+  border: 1px solid var(--dd-line);
+  background: var(--dd-surface);
+  cursor: pointer;
+}
+
+.dd-stat-card {
+  border-radius: 1rem;
+  padding: 1.05rem 1.15rem;
+  text-align: left;
+  box-shadow: var(--dd-shadow);
+}
+
+.dd-stat-card p,
+.dd-stat-card strong,
+.dd-list-item p,
+.dd-list-item small,
+.dd-empty-text,
+.dd-muted {
+  margin: 0;
+}
+
+.dd-stat-card p {
+  color: var(--dd-muted);
+  font-size: 0.82rem;
+}
+
+.dd-stat-card strong {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 1.95rem;
+}
+
+.dd-stat-blue strong {
+  color: var(--dd-primary);
+}
+
+.dd-stat-teal strong {
+  color: #0f8f84;
+}
+
+.dd-stat-amber strong {
+  color: #b45309;
+}
+
+.dd-stat-green strong {
+  color: #15803d;
+}
+
+.dd-two-column {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dd-card {
+  padding: 1.2rem;
+}
+
+.dd-card-head,
+.dd-section-head,
+.dd-appointment-main,
+.dd-appointment-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.9rem;
+}
+
+.dd-card-head {
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.dd-card-head h3,
+.dd-section-head h2 {
+  margin: 0;
+}
+
+.dd-link-btn {
+  color: var(--dd-primary);
+  font-weight: 700;
+}
+
+.dd-list,
+.dd-appointment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.dd-list-item,
+.dd-appointment-card,
+.dd-patient-row {
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+}
+
+.dd-list-item,
+.dd-patient-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  background: #f8fbff;
+  border: 1px solid #e8effb;
+}
+
+.dd-list-item strong,
+.dd-appointment-main strong,
+.dd-patient-row strong,
+.dd-detail-block strong {
+  display: block;
+}
+
+.dd-list-item p,
+.dd-appointment-main p,
+.dd-patient-row p {
+  color: var(--dd-muted);
+  font-size: 0.84rem;
+  margin-top: 0.2rem;
+}
+
+.dd-list-item-stack {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.dd-list-item-highlight {
+  background: #fff8e6;
+  border-color: #fde68a;
+}
+
+.dd-mini-badge,
+.dd-count-chip {
+  background: var(--dd-primary-soft);
+  color: var(--dd-primary);
+  padding: 0.28rem 0.65rem;
+  font-size: 0.78rem;
+}
+
+.dd-section {
+  max-width: 1120px;
+}
+
+.dd-section-head {
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.dd-muted {
+  color: var(--dd-muted);
+  line-height: 1.6;
+}
+
+.dd-filter-group {
+  display: flex;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.dd-filter-btn {
+  padding: 0.68rem 0.95rem;
+  border-radius: 0.75rem;
+  background: #edf3ff;
+  color: var(--dd-primary);
+  font-weight: 700;
+}
+
+.dd-filter-btn.active {
+  background: linear-gradient(135deg, var(--dd-primary), #1984ff);
+  color: #fff;
+}
+
+.dd-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.dd-pill-pending {
+  background: var(--dd-warning);
+  color: var(--dd-warning-text);
+}
+
+.dd-pill-completed {
+  background: var(--dd-success);
+  color: var(--dd-success-text);
+}
+
+.dd-pill-cancelled {
+  background: var(--dd-danger);
+  color: var(--dd-danger-text);
+}
+
+.dd-appointment-card {
+  border: 1px solid var(--dd-line);
+  background: #fbfdff;
+}
+
+.dd-appointment-card-alert {
+  border-color: #f2c94c;
+  background: #fffaf0;
+}
+
+.dd-appointment-main {
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.dd-appointment-main small {
+  display: block;
+  margin-top: 0.35rem;
+  color: var(--dd-muted);
+}
+
+.dd-appointment-actions {
+  flex-wrap: wrap;
+}
+
+.dd-btn {
+  border: none;
+  border-radius: 0.75rem;
+  padding: 0.72rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dd-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.dd-btn-primary {
+  background: linear-gradient(135deg, var(--dd-primary), #1984ff);
+  color: #fff;
+}
+
+.dd-btn-danger {
+  background: linear-gradient(135deg, #d84848, #be3232);
+  color: #fff;
+}
+
+.dd-search-input,
+.dd-form-grid input,
+.dd-form-grid select,
+.dd-form-grid textarea {
+  width: 100%;
+  border: 1px solid var(--dd-line);
+  border-radius: 0.8rem;
+  padding: 0.8rem 0.9rem;
+  font: inherit;
+  color: var(--dd-text);
+  background: #fff;
+}
+
+.dd-search-input {
+  max-width: 320px;
+}
+
+.dd-form-grid {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.dd-form-grid label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.dd-form-grid textarea {
+  resize: vertical;
+}
+
+.dd-patient-row {
+  text-align: left;
+  font: inherit;
+}
+
+.dd-patient-row.active {
+  background: #edf4ff;
+  border-color: #bfd6ff;
+}
+
+.dd-details-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dd-detail-block {
+  padding: 0.95rem 1rem;
+  border-radius: 0.9rem;
+  background: #f8fbff;
+  border: 1px solid #e8effb;
+}
+
+.dd-detail-block span {
+  color: var(--dd-muted);
+}
+
+.dd-detail-block strong {
+  margin-top: 0.35rem;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.dd-detail-block-full {
+  grid-column: 1 / -1;
+}
+
+.dd-empty-text {
+  color: var(--dd-muted);
+  line-height: 1.6;
+}
+
+.dd-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 150;
+}
+
+.dd-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  border: none;
+  background: none;
+  padding: 0.25rem;
+  cursor: pointer;
+}
+
+.dd-hamburger span {
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--dd-text);
+}
+
+@media (max-width: 980px) {
+  .dd-stats-grid,
+  .dd-two-column,
+  .dd-details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .dd-sidebar {
+    position: fixed;
+    left: 0;
+    transform: translateX(-100%);
+  }
+
+  .dd-sidebar-open {
+    transform: translateX(0);
+  }
+
+  .dd-overlay,
+  .dd-hamburger {
+    display: block;
+  }
+
+  .dd-topbar {
+    padding: 0 1rem;
+  }
+
+  .dd-topbar-actions {
+    gap: 0.5rem;
+  }
+
+  .dd-notification-chip span,
+  .dd-home-link {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .dd-content {
+    padding: 1rem;
+  }
+
+  .dd-welcome-banner,
+  .dd-section-head,
+  .dd-card-head,
+  .dd-appointment-main,
+  .dd-appointment-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dd-search-input {
+    max-width: none;
+  }
+}

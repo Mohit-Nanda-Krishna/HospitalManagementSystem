@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -27,7 +26,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { auth, db } from "../firebase";
+import { auth, createDoctorAuthAccount, db } from "../firebase";
 import "../styles/admin.css";
 
 const initialBeds = [
@@ -183,10 +182,10 @@ function AdminPanel() {
     name: "",
     specialization: "",
     email: "",
+    password: "",
     phone: "",
     availability: "",
     timeSlots: "",
-    accessKey: "",
   });
   const [patientForm, setPatientForm] = useState({
     name: "",
@@ -385,12 +384,11 @@ function AdminPanel() {
       name,
       specialization,
       email,
+      password,
       phone,
       availability,
       timeSlots,
-      accessKey,
-    } =
-      doctorForm;
+    } = doctorForm;
     const parsedTimeSlots = timeSlots
       .split(",")
       .map((slot) => slot.trim())
@@ -400,35 +398,61 @@ function AdminPanel() {
       !name.trim() ||
       !specialization.trim() ||
       !email.trim() ||
-      !phone.trim() ||
-      !availability.trim() ||
-      !/^\d{4}$/.test(accessKey.trim()) ||
-      parsedTimeSlots.length === 0
+      password.trim().length < 6
     ) {
       setDoctorError(
-        "Enter doctor details, a 4 digit access key, and at least one time slot."
+        "Enter doctor name, email, specialization, and a password of at least 6 characters."
       );
       return;
     }
 
     try {
+      const normalizedEmail = email.trim().toLowerCase();
+      const existingDoctorQuery = query(
+        collection(db, "users"),
+        where("email", "==", normalizedEmail)
+      );
+      const existingDoctorSnap = await getDocs(existingDoctorQuery);
+
+      if (!existingDoctorSnap.empty) {
+        setDoctorError("A user with this email already exists.");
+        return;
+      }
+
+      const createdDoctorUser = await createDoctorAuthAccount(
+        normalizedEmail,
+        password.trim()
+      );
+
       const payload = {
+        uid: createdDoctorUser.uid,
         name: name.trim(),
         specialization: [specialization.trim()],
-        email: email.trim().toLowerCase(),
+        email: normalizedEmail,
         phone: phone.trim(),
         availability: availability.trim(),
         timeSlots: parsedTimeSlots,
-        accessKey: accessKey.trim(),
+        approved: true,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
 
-      const addedDoctor = await addDoc(collection(db, "doctors"), payload);
+      await setDoc(doc(db, "users", createdDoctorUser.uid), {
+        uid: createdDoctorUser.uid,
+        doctorId: createdDoctorUser.uid,
+        name: name.trim(),
+        email: normalizedEmail,
+        role: "doctor",
+        specialization: specialization.trim(),
+        approved: true,
+        createdAt: serverTimestamp(),
+      });
+
+      await setDoc(doc(db, "doctors", createdDoctorUser.uid), payload);
 
       setDoctors((current) => [
         {
-          id: addedDoctor.id,
+          id: createdDoctorUser.uid,
           ...payload,
           specialization: payload.specialization,
           patientsToday: 0,
@@ -439,15 +463,21 @@ function AdminPanel() {
         name: "",
         specialization: "",
         email: "",
+        password: "",
         phone: "",
         availability: "",
         timeSlots: "",
-        accessKey: "",
       });
       setDoctorError("");
     } catch (error) {
       console.error("Failed to add doctor", error);
-      setDoctorError("Unable to save doctor to Firestore.");
+      if (error.code === "auth/email-already-in-use") {
+        setDoctorError("A Firebase account already exists for this email.");
+      } else if (error.code === "auth/weak-password") {
+        setDoctorError("Password must be at least 6 characters long.");
+      } else {
+        setDoctorError("Unable to create doctor account right now.");
+      }
     }
   };
 
@@ -695,9 +725,9 @@ function AdminPanel() {
               </label>
 
               <div className="admin-profile-card">
-                <strong>Ananya Rao</strong>
+                <strong>Gowtham</strong>
                 <span>Super Admin</span>
-                <small>ananya.rao@hms.com</small>
+                <small>gowtham@hms.com</small>
                 <button type="button" className="admin-profile-action" onClick={handleLogout}>
                   Sign Out
                 </button>
@@ -904,6 +934,20 @@ function AdminPanel() {
                     placeholder="doctor@hospital.com"
                   />
 
+                  <label htmlFor="doctor-password">Password</label>
+                  <input
+                    id="doctor-password"
+                    type="password"
+                    value={doctorForm.password}
+                    onChange={(event) =>
+                      setDoctorForm((current) => ({
+                        ...current,
+                        password: event.target.value,
+                      }))
+                    }
+                    placeholder="Minimum 6 characters"
+                  />
+
                   <label htmlFor="doctor-phone">Phone</label>
                   <input
                     id="doctor-phone"
@@ -916,22 +960,6 @@ function AdminPanel() {
                       }))
                     }
                     placeholder="+91 98765 43210"
-                  />
-
-                  <label htmlFor="doctor-access-key">Doctor access key</label>
-                  <input
-                    id="doctor-access-key"
-                    type="password"
-                    inputMode="numeric"
-                    maxLength="4"
-                    value={doctorForm.accessKey}
-                    onChange={(event) =>
-                      setDoctorForm((current) => ({
-                        ...current,
-                        accessKey: event.target.value.replace(/\D/g, "").slice(0, 4),
-                      }))
-                    }
-                    placeholder="4 digit key"
                   />
 
                   <label htmlFor="doctor-availability">Availability</label>
@@ -991,9 +1019,9 @@ function AdminPanel() {
                         .length,
                   },
                   {
-                    key: "accessKey",
-                    label: "Access key",
-                    render: () => "Protected",
+                    key: "approval",
+                    label: "Approval",
+                    render: (row) => (row.approved ? "Approved" : "Pending"),
                   },
                   {
                     key: "actions",

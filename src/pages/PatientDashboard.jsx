@@ -1,27 +1,21 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, getDocs, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+} from "firebase/firestore";
 import { auth, db } from "../firebase";
 import "../styles/patientDashboard.css";
-
-const mockPrescriptions = [
-  {
-    id: "RX-2026-101",
-    doctor: "Dr. Rajesh Kumar",
-    date: "2026-02-22",
-    summary: "Hypertension follow-up",
-    status: "active",
-    medicines: [
-      "Amlodipine 5mg - once daily",
-      "Telmisartan 40mg - once daily",
-      "Reduce sodium intake and regular walking",
-    ],
-  },
-];
-
-const mockHistory = [];
-const mockBilling = [];
 
 const NAV_ITEMS = [
   { id: "overview", label: "Dashboard", icon: "⊞" },
@@ -39,6 +33,80 @@ function formatDate(dateValue) {
     month: "short",
     year: "numeric",
   });
+}
+
+function getAppointmentDateValue(dateValue) {
+  if (!dateValue) {
+    return "";
+  }
+
+  if (typeof dateValue === "string") {
+    return dateValue.slice(0, 10);
+  }
+
+  if (typeof dateValue?.toDate === "function") {
+    const resolvedDate = dateValue.toDate();
+    const year = resolvedDate.getFullYear();
+    const month = String(resolvedDate.getMonth() + 1).padStart(2, "0");
+    const day = String(resolvedDate.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  return "";
+}
+
+function getAppointmentTimeValue(timeValue) {
+  if (!timeValue) {
+    return "00:00";
+  }
+
+  const rawTime = String(timeValue).split("-")[0].trim().toUpperCase();
+
+  if (/^\d{1,2}:\d{2}$/.test(rawTime)) {
+    const [hours, minutes] = rawTime.split(":");
+    return `${hours.padStart(2, "0")}:${minutes}`;
+  }
+
+  const amPmMatch = rawTime.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/);
+  if (amPmMatch) {
+    let hours = Number(amPmMatch[1]);
+    const minutes = amPmMatch[2];
+    const meridiem = amPmMatch[3];
+
+    if (meridiem === "PM" && hours !== 12) {
+      hours += 12;
+    }
+
+    if (meridiem === "AM" && hours === 12) {
+      hours = 0;
+    }
+
+    return `${String(hours).padStart(2, "0")}:${minutes}`;
+  }
+
+  return "00:00";
+}
+
+function getAppointmentDateTime(appointment) {
+  const dateValue = getAppointmentDateValue(appointment?.date);
+  if (!dateValue) {
+    return null;
+  }
+
+  return new Date(`${dateValue}T${getAppointmentTimeValue(appointment?.time)}:00`);
+}
+
+function getDayStart(dateValue) {
+  if (!dateValue) {
+    return null;
+  }
+
+  const resolvedDate = new Date(`${dateValue}T00:00:00`);
+  if (Number.isNaN(resolvedDate.getTime())) {
+    return null;
+  }
+
+  return resolvedDate;
 }
 
 function PatientDashboard() {
@@ -162,40 +230,197 @@ function PatientDashboard() {
 
   useEffect(() => {
     if (!currentUserUid) return;
-    const aptQuery = query(collection(db, "appointments"), where("patientUid", "==", currentUserUid));
-    const unsubscribeApt = onSnapshot(aptQuery, (snapshot) => {
-      const aptData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setAppointments(aptData);
-    });
-    return () => unsubscribeApt();
+
+    let appointmentsByUid = [];
+    let appointmentsById = [];
+
+    const syncAppointments = () => {
+      const mergedAppointments = [...appointmentsByUid, ...appointmentsById].reduce(
+        (result, appointment) => {
+          result.set(appointment.id, appointment);
+          return result;
+        },
+        new Map()
+      );
+
+      setAppointments([...mergedAppointments.values()]);
+    };
+
+    const unsubscribePatientUid = onSnapshot(
+      query(collection(db, "appointments"), where("patientUid", "==", currentUserUid)),
+      (snapshot) => {
+        appointmentsByUid = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+        syncAppointments();
+      },
+      (error) => {
+        console.error("Appointment fetch error (patientUid):", error);
+      }
+    );
+
+    const unsubscribePatientId = onSnapshot(
+      query(collection(db, "appointments"), where("patientId", "==", currentUserUid)),
+      (snapshot) => {
+        appointmentsById = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+        syncAppointments();
+      },
+      (error) => {
+        console.error("Appointment fetch error (patientId):", error);
+      }
+    );
+
+    return () => {
+      unsubscribePatientUid();
+      unsubscribePatientId();
+    };
   }, [currentUserUid]);
 
-  const [rescheduleDraft, setRescheduleDraft] = useState({});
   const [showBookForm, setShowBookForm] = useState(false);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [billingRecords, setBillingRecords] = useState([]);
+  const [dashboardDataLoading, setDashboardDataLoading] = useState(true);
+  const [dashboardDataError, setDashboardDataError] = useState("");
 
   const sortedAppointments = useMemo(() => {
     return [...appointments].sort((a, b) => {
-      if(!a.date || !b.date) return 0;
-      const first = new Date(`${a.date}T${a.time || '00:00'}`).getTime();
-      const second = new Date(`${b.date}T${b.time || '00:00'}`).getTime();
+      const firstDate = getAppointmentDateValue(a?.date);
+      const secondDate = getAppointmentDateValue(b?.date);
+      const first = getDayStart(firstDate)?.getTime() || 0;
+      const second = getDayStart(secondDate)?.getTime() || 0;
       return second - first;
     });
   }, [appointments]);
 
   const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
   const upcomingAppointments = sortedAppointments.filter((a) => {
-    if(!a.date) return false;
-    return new Date(`${a.date}T${a.time || '00:00'}`) >= today;
+    if ((a.status || "").toLowerCase() === "completed") {
+      return false;
+    }
+
+    const appointmentDate = getDayStart(getAppointmentDateValue(a?.date));
+    if (!appointmentDate) {
+      return false;
+    }
+
+    return appointmentDate >= todayStart;
   });
 
   const pastAppointments = sortedAppointments.filter((a) => {
-    if(!a.date) return true;
-    return new Date(`${a.date}T${a.time || '00:00'}`) < today;
+    if ((a.status || "").toLowerCase() === "completed") {
+      return true;
+    }
+
+    const appointmentDate = getDayStart(getAppointmentDateValue(a?.date));
+    if (!appointmentDate) {
+      return !a.date;
+    }
+
+    return appointmentDate < todayStart;
   });
+
+  const medicalRecords = useMemo(() => {
+    return pastAppointments.map((appointment) => ({
+      id: appointment.id,
+      date: appointment.date,
+      doctor: appointment.doctor || appointment.doctorName || "Doctor",
+      diagnosis: appointment.specialty || appointment.department || "General consultation",
+      treatment: `Appointment status: ${appointment.status || "completed"}`,
+      report: appointment.time ? `Consultation time: ${appointment.time}` : "Consultation completed",
+    }));
+  }, [pastAppointments]);
+
+  useEffect(() => {
+    if (!currentUserUid) return;
+
+    setDashboardDataLoading(true);
+    setDashboardDataError("");
+
+    const prescriptionQuery = query(
+      collection(db, "prescriptions"),
+      where("patientId", "==", currentUserUid)
+    );
+    const billingQuery = query(
+      collection(db, "billing"),
+      where("patientId", "==", currentUserUid)
+    );
+
+    let prescriptionsLoaded = false;
+    let billingLoaded = false;
+
+    const finishLoading = () => {
+      if (prescriptionsLoaded && billingLoaded) {
+        setDashboardDataLoading(false);
+      }
+    };
+
+    const unsubscribePrescriptions = onSnapshot(
+      prescriptionQuery,
+      (snapshot) => {
+        const prescriptionData = snapshot.docs.map((item) => {
+          const data = item.data();
+          const rawMedicines = Array.isArray(data.medicines)
+            ? data.medicines
+            : String(data.medicines || "")
+                .split("\n")
+                .map((medicine) => medicine.trim())
+                .filter(Boolean);
+
+          return {
+            id: item.id,
+            ...data,
+            doctor: data.doctor || data.doctorName || "Doctor",
+            summary: data.summary || data.notes || "Prescription update",
+            status: data.status || "active",
+            medicines: rawMedicines,
+          };
+        });
+        prescriptionData.sort((a, b) => new Date(`${b.date || "1970-01-01"}T00:00:00`) - new Date(`${a.date || "1970-01-01"}T00:00:00`));
+        setPrescriptions(prescriptionData);
+        prescriptionsLoaded = true;
+        finishLoading();
+      },
+      (error) => {
+        console.error("Prescription fetch error:", error);
+        setDashboardDataError("Unable to load dashboard data.");
+        prescriptionsLoaded = true;
+        finishLoading();
+      }
+    );
+
+    const unsubscribeBilling = onSnapshot(
+      billingQuery,
+      (snapshot) => {
+        const billingData = snapshot.docs.map((item) => ({
+          id: item.id,
+          ...item.data(),
+        }));
+        billingData.sort((a, b) => new Date(`${b.date || "1970-01-01"}T00:00:00`) - new Date(`${a.date || "1970-01-01"}T00:00:00`));
+        setBillingRecords(billingData);
+        billingLoaded = true;
+        finishLoading();
+      },
+      (error) => {
+        console.error("Billing fetch error:", error);
+        setDashboardDataError("Unable to load dashboard data.");
+        billingLoaded = true;
+        finishLoading();
+      }
+    );
+
+    return () => {
+      unsubscribePrescriptions();
+      unsubscribeBilling();
+    };
+  }, [currentUserUid]);
 
   const setAppointmentStatus = async (id, nextStatus) => {
     try {
+      if (nextStatus === "cancelled") {
+        await deleteDoc(doc(db, "appointments", id));
+        return;
+      }
+
       await updateDoc(doc(db, "appointments", id), { status: nextStatus });
     } catch(err) {
       console.error(err);
@@ -246,7 +471,7 @@ function PatientDashboard() {
         specialty: appointmentForm.specialty,
         date: appointmentForm.date,
         time: appointmentForm.time,
-        status: "pending",
+        status: "confirmed",
         createdAt: serverTimestamp()
       });
       setShowBookForm(false);
@@ -257,37 +482,23 @@ function PatientDashboard() {
     }
   };
 
-  const handleReschedule = async (appointmentId) => {
-    const draft = rescheduleDraft[appointmentId];
-    if (!draft?.date || !draft?.time) return;
-    try {
-      await updateDoc(doc(db, "appointments", appointmentId), {
-        date: draft.date,
-        time: draft.time,
-        status: "pending", // resets to pending if rescheduled
-        updatedAt: serverTimestamp()
-      });
-      setRescheduleDraft((current) => ({ ...current, [appointmentId]: { date: "", time: "" } }));
-    } catch(err) {
-      console.error("Reschedule error:", err);
-    }
-  };
-
   const handlePrescriptionDownload = (prescription) => {
+    const medicines = Array.isArray(prescription.medicines)
+      ? prescription.medicines
+      : [];
     const lines = [
-      `Prescription ID: ${prescription.id}`,
       `Date: ${formatDate(prescription.date)}`,
       `Doctor: ${prescription.doctor}`,
       `Visit Summary: ${prescription.summary}`,
       "",
       "Medicines / Advice:",
-      ...prescription.medicines.map((m, i) => `${i + 1}. ${m}`),
+      ...medicines.map((m, i) => `${i + 1}. ${m}`),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${prescription.id}.txt`;
+    a.download = `Prescription-${formatDate(prescription.date) || "record"}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -296,7 +507,6 @@ function PatientDashboard() {
 
   const handleReportDownload = (report) => {
     const lines = [
-      `Medical Report ID: ${report.id}`,
       `Date: ${formatDate(report.date)}`,
       `Doctor: ${report.doctor}`,
       `Diagnosis: ${report.diagnosis}`,
@@ -307,14 +517,13 @@ function PatientDashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Report_${report.id}.txt`;
+    a.download = `Medical-Report-${formatDate(report.date) || "record"}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const handleReceiptDownload = (bill) => {
     const lines = [
-      `Invoice ID: ${bill.id}`,
       `Date: ${formatDate(bill.date)}`,
       `Description: ${bill.description}`,
       `Amount: Rs. ${bill.amount.toLocaleString()}`,
@@ -324,7 +533,7 @@ function PatientDashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `Receipt_${bill.id}.txt`;
+    a.download = `Receipt-${formatDate(bill.date) || "record"}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -350,8 +559,8 @@ function PatientDashboard() {
         {[
           { label: "Upcoming Appointments", value: upcomingAppointments.length, icon: "📅", color: "blue", action: () => setActiveTab("appointments") },
           { label: "Past Visits", value: pastAppointments.length, icon: "🏥", color: "teal", action: () => setActiveTab("records") },
-          { label: "Active Prescriptions", value: mockPrescriptions.length, icon: "💊", color: "green", action: () => setActiveTab("prescriptions") },
-          { label: "Pending Dues", value: `₹${mockBilling.filter(b => b.status === "pending").reduce((s, b) => s + b.amount, 0).toLocaleString()}`, icon: "💳", color: "amber", action: () => setActiveTab("billing") },
+          { label: "Active Prescriptions", value: prescriptions.length, icon: "💊", color: "green", action: () => setActiveTab("prescriptions") },
+          { label: "Pending Dues", value: `₹${billingRecords.filter(b => b.status === "pending").reduce((s, b) => s + (Number(b.amount) || 0), 0).toLocaleString()}`, icon: "💳", color: "amber", action: () => setActiveTab("billing") },
         ].map((stat) => (
           <button key={stat.label} className={`pd-stat-card pd-stat-${stat.color}`} onClick={stat.action}>
             <span className="pd-stat-icon">{stat.icon}</span>
@@ -392,20 +601,26 @@ function PatientDashboard() {
             <h3>Active Prescriptions</h3>
             <button className="pd-link-btn" onClick={() => setActiveTab("prescriptions")}>View all →</button>
           </div>
-          <div className="pd-mini-list">
-            {mockPrescriptions.map((p) => (
-              <div key={p.id} className="pd-mini-item">
-                <div className="pd-mini-icon-wrap pd-icon-green">
-                  <span>💊</span>
+          {dashboardDataLoading ? (
+            <p className="pd-muted">Loading prescriptions...</p>
+          ) : prescriptions.length === 0 ? (
+            <p className="pd-muted">No active prescriptions.</p>
+          ) : (
+            <div className="pd-mini-list">
+              {prescriptions.slice(0, 3).map((p) => (
+                <div key={p.id} className="pd-mini-item">
+                  <div className="pd-mini-icon-wrap pd-icon-green">
+                    <span>💊</span>
+                  </div>
+                  <div className="pd-mini-content">
+                    <p className="pd-mini-title">{p.summary}</p>
+                    <p className="pd-mini-sub">{p.doctor} · {formatDate(p.date)}</p>
+                  </div>
+                  <span className="pd-pill pd-pill-active">active</span>
                 </div>
-                <div className="pd-mini-content">
-                  <p className="pd-mini-title">{p.summary}</p>
-                  <p className="pd-mini-sub">{p.doctor} · {formatDate(p.date)}</p>
-                </div>
-                <span className="pd-pill pd-pill-active">active</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="pd-card">
@@ -413,19 +628,23 @@ function PatientDashboard() {
             <h3>Recent Medical History</h3>
             <button className="pd-link-btn" onClick={() => setActiveTab("records")}>View all →</button>
           </div>
-          <div className="pd-mini-list">
-            {mockHistory.slice(0, 2).map((v) => (
-              <div key={v.id} className="pd-mini-item">
-                <div className="pd-mini-icon-wrap pd-icon-purple">
-                  <span>📋</span>
+          {medicalRecords.length === 0 ? (
+            <p className="pd-muted">No recent medical history.</p>
+          ) : (
+            <div className="pd-mini-list">
+              {medicalRecords.slice(0, 2).map((v) => (
+                <div key={v.id} className="pd-mini-item">
+                  <div className="pd-mini-icon-wrap pd-icon-purple">
+                    <span>📋</span>
+                  </div>
+                  <div className="pd-mini-content">
+                    <p className="pd-mini-title">{v.diagnosis}</p>
+                    <p className="pd-mini-sub">{v.doctor} · {formatDate(v.date)}</p>
+                  </div>
                 </div>
-                <div className="pd-mini-content">
-                  <p className="pd-mini-title">{v.diagnosis}</p>
-                  <p className="pd-mini-sub">{v.doctor} · {formatDate(v.date)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="pd-card">
@@ -433,20 +652,26 @@ function PatientDashboard() {
             <h3>Billing Summary</h3>
             <button className="pd-link-btn" onClick={() => setActiveTab("billing")}>View all →</button>
           </div>
-          <div className="pd-mini-list">
-            {mockBilling.map((b) => (
-              <div key={b.id} className="pd-mini-item">
-                <div className="pd-mini-icon-wrap pd-icon-amber">
-                  <span>🧾</span>
+          {dashboardDataLoading ? (
+            <p className="pd-muted">Loading billing data...</p>
+          ) : billingRecords.length === 0 ? (
+            <p className="pd-muted">No billing records available.</p>
+          ) : (
+            <div className="pd-mini-list">
+              {billingRecords.slice(0, 3).map((b) => (
+                <div key={b.id} className="pd-mini-item">
+                  <div className="pd-mini-icon-wrap pd-icon-amber">
+                    <span>🧾</span>
+                  </div>
+                  <div className="pd-mini-content">
+                    <p className="pd-mini-title">{b.description}</p>
+                    <p className="pd-mini-sub">₹{(Number(b.amount) || 0).toLocaleString()} · {formatDate(b.date)}</p>
+                  </div>
+                  <span className={`pd-pill pd-pill-${b.status}`}>{b.status}</span>
                 </div>
-                <div className="pd-mini-content">
-                  <p className="pd-mini-title">{b.description}</p>
-                  <p className="pd-mini-sub">₹{b.amount.toLocaleString()} · {formatDate(b.date)}</p>
-                </div>
-                <span className={`pd-pill pd-pill-${b.status}`}>{b.status}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -526,18 +751,8 @@ function PatientDashboard() {
                     <span className={`pd-pill pd-pill-${a.status}`}>{a.status}</span>
                   </div>
                   <div className="pd-apt-actions">
-                    {a.status !== "confirmed" && (
-                      <button className="pd-btn pd-btn-sm" onClick={() => setAppointmentStatus(a.id, "confirmed")}>Confirm</button>
-                    )}
                     {a.status !== "cancelled" && (
                       <button className="pd-btn pd-btn-sm pd-btn-danger" onClick={() => setAppointmentStatus(a.id, "cancelled")}>Cancel</button>
-                    )}
-                    {a.status !== "cancelled" && (
-                      <div className="pd-reschedule">
-                        <input type="date" value={rescheduleDraft[a.id]?.date || ""} onChange={(e) => setRescheduleDraft(c => ({ ...c, [a.id]: { ...c[a.id], date: e.target.value } }))} />
-                        <input type="time" value={rescheduleDraft[a.id]?.time || ""} onChange={(e) => setRescheduleDraft(c => ({ ...c, [a.id]: { ...c[a.id], time: e.target.value } }))} />
-                        <button className="pd-btn pd-btn-sm pd-btn-secondary" onClick={() => handleReschedule(a.id)}>Reschedule</button>
-                      </div>
                     )}
                   </div>
                 </div>
@@ -582,7 +797,9 @@ function PatientDashboard() {
         </div>
       </div>
       <div className="pd-records-list">
-        {mockHistory.map((v) => (
+        {medicalRecords.length === 0 ? (
+          <div className="pd-empty">No medical records available</div>
+        ) : medicalRecords.map((v) => (
           <div key={v.id} className="pd-record-card">
             <div className="pd-record-header">
               <div className="pd-record-date-badge">
@@ -593,7 +810,6 @@ function PatientDashboard() {
                 <p className="pd-apt-title">{v.diagnosis}</p>
                 <p className="pd-apt-doctor">{v.doctor}</p>
               </div>
-              <span className="pd-record-id">{v.id}</span>
             </div>
             <div className="pd-record-body">
               <div className="pd-record-field">
@@ -625,7 +841,11 @@ function PatientDashboard() {
         <button className="pd-btn pd-btn-secondary" onClick={() => window.print()}>🖨 Print All</button>
       </div>
       <div className="pd-rx-list">
-        {mockPrescriptions.map((p) => (
+        {dashboardDataLoading ? (
+          <div className="pd-empty">Loading prescriptions...</div>
+        ) : prescriptions.length === 0 ? (
+          <div className="pd-empty">No prescriptions found</div>
+        ) : prescriptions.map((p) => (
           <div key={p.id} className="pd-rx-card">
             <div className="pd-rx-header">
               <div className="pd-rx-icon">💊</div>
@@ -644,7 +864,6 @@ function PatientDashboard() {
               ))}
             </div>
             <div className="pd-rx-footer">
-              <span className="pd-muted pd-rx-id">{p.id}</span>
               <button className="pd-btn pd-btn-sm" onClick={() => handlePrescriptionDownload(p)}>⬇ Download</button>
             </div>
           </div>
@@ -664,32 +883,34 @@ function PatientDashboard() {
       <div className="pd-billing-summary">
         <div className="pd-billing-stat">
           <p>Total Paid</p>
-          <strong className="pd-billing-paid">₹{mockBilling.filter(b => b.status === "paid").reduce((s, b) => s + b.amount, 0).toLocaleString()}</strong>
+          <strong className="pd-billing-paid">₹{billingRecords.filter(b => b.status === "paid").reduce((s, b) => s + (Number(b.amount) || 0), 0).toLocaleString()}</strong>
         </div>
         <div className="pd-billing-stat">
           <p>Pending</p>
-          <strong className="pd-billing-pending">₹{mockBilling.filter(b => b.status === "pending").reduce((s, b) => s + b.amount, 0).toLocaleString()}</strong>
+          <strong className="pd-billing-pending">₹{billingRecords.filter(b => b.status === "pending").reduce((s, b) => s + (Number(b.amount) || 0), 0).toLocaleString()}</strong>
         </div>
         <div className="pd-billing-stat">
           <p>Total Invoices</p>
-          <strong>{mockBilling.length}</strong>
+          <strong>{billingRecords.length}</strong>
         </div>
       </div>
       <div className="pd-billing-table">
         <div className="pd-table-header">
-          <span>Invoice ID</span>
           <span>Description</span>
           <span>Date</span>
           <span>Amount</span>
           <span>Status</span>
           <span>Action</span>
         </div>
-        {mockBilling.map((b) => (
+        {dashboardDataLoading ? (
+          <div className="pd-empty">Loading billing records...</div>
+        ) : billingRecords.length === 0 ? (
+          <div className="pd-empty">No billing records found</div>
+        ) : billingRecords.map((b) => (
           <div key={b.id} className="pd-table-row">
-            <span className="pd-table-id">{b.id}</span>
             <span>{b.description}</span>
             <span>{formatDate(b.date)}</span>
-            <span className="pd-table-amount">₹{b.amount.toLocaleString()}</span>
+            <span className="pd-table-amount">₹{(Number(b.amount) || 0).toLocaleString()}</span>
             <span><span className={`pd-pill pd-pill-${b.status}`}>{b.status}</span></span>
             <span>
               {b.status === "pending" ? (
@@ -860,6 +1081,7 @@ function PatientDashboard() {
 
         {/* Page Content */}
         <main className="pd-content">
+          {dashboardDataError ? <p className="pd-muted">{dashboardDataError}</p> : null}
           {profileLoading ? <p>Loading...</p> : renderContent()}
         </main>
       </div>

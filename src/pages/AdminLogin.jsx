@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import {
+  onAuthStateChanged,
+  signOut,
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -13,7 +15,38 @@ function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        setCheckingSession(false);
+        return;
+      }
+
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists() && userSnap.data().role === "admin") {
+          navigate("/admin/dashboard", { replace: true });
+          return;
+        }
+
+        await signOut(auth);
+        setError("Unauthorized access");
+      } catch (err) {
+        console.error("Admin session check failed", err);
+        await signOut(auth);
+        setError("Unable to verify admin access. Please try again.");
+      } finally {
+        setCheckingSession(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,28 +55,59 @@ function AdminLogin() {
 
     try {
       const { user } = await signInWithEmailAndPassword(auth, email, password);
-      
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        setError("Account missing in directory. Please contact support.");
+        await signOut(auth);
+        setError("Unauthorized access");
         return;
       }
 
       const userData = userSnap.data();
       if (userData.role !== "admin") {
-        setError("RESTRICTED: This account does not have administrative privileges.");
+        await signOut(auth);
+        setError("Unauthorized access");
         return;
       }
 
-      navigate("/admin/dashboard");
+      navigate("/admin/dashboard", { replace: true });
     } catch (err) {
-      setError(err.message);
+      if (
+        err.code === "auth/invalid-credential" ||
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/wrong-password" ||
+        err.code === "auth/invalid-email"
+      ) {
+        setError("Invalid credentials");
+      } else {
+        setError("Unable to sign in right now. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  if (checkingSession) {
+    return (
+      <main className="auth-page">
+        <section className="auth-shell">
+          <aside className="auth-brand-panel" style={{ background: "linear-gradient(135deg, #7f1d1d, #450a0a)" }}>
+            <p className="auth-eyebrow">Admin Access</p>
+            <h1>System Administrator</h1>
+            <p>
+              Secure portal for hospital administration, doctor management, and system operations.
+            </p>
+          </aside>
+
+          <div className="auth-card">
+            <h2>Admin Login</h2>
+            <p className="auth-subtext">Checking your session...</p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="auth-page">
@@ -93,9 +157,6 @@ function AdminLogin() {
             </button>
           </form>
 
-          <p className="auth-switch" style={{marginTop: '2rem'}}>
-            Need admin access? <Link to="/admin-signup">Register Admin</Link>
-          </p>
           <Link className="auth-back" to="/">
             Back to Home
           </Link>
