@@ -15,9 +15,21 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
 .home-page {
   font-family: "Manrope", "Segoe UI", sans-serif;
   color: var(--text);
+  padding-top: 72px;
   background:
     radial-gradient(circle at 10% 0%, #d8e7ff 0, transparent 35%),
     radial-gradient(circle at 90% 20%, #dff3ff 0, transparent 25%),
@@ -25,18 +37,22 @@
 }
 
 .home-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
+  width: 100%;
   backdrop-filter: blur(10px);
   background: rgba(6, 0, 109, 0.87);
   border-bottom: 1px solid var(--line);
 }
 
 .home-nav {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 1rem 1.4rem;
+  max-width: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 1.1rem 14rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -247,6 +263,7 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
+  align-items: stretch;
 }
 
 .portal-card {
@@ -255,6 +272,9 @@
   border: 1px solid var(--line);
   box-shadow: 0 10px 30px rgba(10, 43, 92, 0.08);
   padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 

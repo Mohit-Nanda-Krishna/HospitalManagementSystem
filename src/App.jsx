@@ -16,14 +16,17 @@ import { Navigate, Routes, Route } from "react-router-dom";
 
 function ProtectedRoleRoute({ children, requiredRole, redirectTo }) {
   const [status, setStatus] = useState("checking");
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
+    setAuthLoading(true);
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         if (active) {
           setStatus("denied");
+          setAuthLoading(false);
         }
         return;
       }
@@ -33,6 +36,7 @@ function ProtectedRoleRoute({ children, requiredRole, redirectTo }) {
         if (active) {
           if (!userSnap.exists()) {
             setStatus("denied");
+            setAuthLoading(false);
             return;
           }
 
@@ -42,10 +46,12 @@ function ProtectedRoleRoute({ children, requiredRole, redirectTo }) {
             (userData.role === "doctor" && userData.approved === true);
 
           setStatus(userData.role === requiredRole && isApprovedDoctor ? "allowed" : "denied");
+          setAuthLoading(false);
         }
       } catch (error) {
         if (active) {
           setStatus("denied");
+          setAuthLoading(false);
         }
       }
     });
@@ -56,7 +62,7 @@ function ProtectedRoleRoute({ children, requiredRole, redirectTo }) {
     };
   }, [requiredRole]);
 
-  if (status === "checking") {
+  if (authLoading) {
     return <div style={{ padding: "2rem" }}>Checking access...</div>;
   }
 
