@@ -105,7 +105,7 @@ function DoctorLogin() {
     return (
       <main className="auth-page">
         <section className="auth-shell">
-          <aside className="auth-brand-panel" style={{background: 'linear-gradient(135deg, #0f172a, #334155)'}}>
+          <aside className="auth-brand-panel" style={{background: 'linear-gradient(135deg, #0f3d2e, #1f6f5b)'}}>
             <p className="auth-eyebrow">Doctor Access</p>
             <h1>Welcome Doctor</h1>
             <p>
@@ -125,7 +125,7 @@ function DoctorLogin() {
   return (
     <main className="auth-page">
       <section className="auth-shell">
-        <aside className="auth-brand-panel" style={{background: 'linear-gradient(135deg, #0f172a, #334155)'}}>
+        <aside className="auth-brand-panel" style={{background: 'linear-gradient(135deg, #0f3d2e, #1f6f5b)'}}>
           <p className="auth-eyebrow">Doctor Access</p>
           <h1>Welcome Doctor</h1>
           <p>
@@ -165,7 +165,7 @@ function DoctorLogin() {
 
             {error ? <p className="auth-error">{error}</p> : null}
 
-            <button className="auth-btn primary" type="submit" disabled={loading} style={{background: '#1e293b'}}>
+            <button className="auth-btn primary" type="submit" disabled={loading} style={{background: '#0f3d2e'}}>
               {loading ? "Signing In..." : "Sign In"}
             </button>
           </form>

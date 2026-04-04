@@ -1,27 +1,27 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 
 .admin-dashboard-page {
-  --admin-bg: #eef4ff;
+  --admin-bg: #fdf2f2;
   --admin-surface: #ffffff;
-  --admin-surface-soft: #f7faff;
+  --admin-surface-soft: #fff7f7;
   --admin-text: #10223d;
   --admin-muted: #5a6d8a;
-  --admin-primary: #0b63f6;
-  --admin-primary-dark: #0d2d58;
-  --admin-line: #d5e1f3;
+  --admin-primary: #7f1d1d;
+  --admin-primary-dark: #450a0a;
+  --admin-line: #f2caca;
   --admin-shadow: 0 22px 50px rgba(9, 39, 90, 0.12);
   --admin-warning: #fff4d8;
   --admin-warning-text: #815d05;
-  --admin-info: #e9f2ff;
-  --admin-info-text: #184d97;
+  --admin-info: #ffecec;
+  --admin-info-text: #7f1d1d;
 
   min-height: 100vh;
   padding: 1.4rem;
   font-family: "Manrope", "Segoe UI", sans-serif;
   color: var(--admin-text);
   background:
-    radial-gradient(circle at 10% 0%, #dce9ff 0, transparent 34%),
-    radial-gradient(circle at 90% 10%, #e4f4ff 0, transparent 28%),
+    radial-gradient(circle at 10% 0%, #fde2e2 0, transparent 34%),
+    radial-gradient(circle at 90% 10%, #ffe3e3 0, transparent 28%),
     var(--admin-bg);
 }
 
@@ -58,7 +58,7 @@
   inset: 0 auto auto 0;
   width: 100%;
   height: 180px;
-  background: linear-gradient(160deg, #0d2d58, #1f5ead);
+  background: linear-gradient(160deg, #7f1d1d, #450a0a);
   z-index: 0;
 }
 
@@ -102,9 +102,9 @@
 
 .admin-sidebar-nav a {
   text-decoration: none;
-  color: #224978;
-  background: #eff5ff;
-  border: 1px solid #d8e4f7;
+  color: #7f1d1d;
+  background: #fff2f2;
+  border: 1px solid #f2caca;
   border-radius: 0.9rem;
   padding: 0.82rem 0.95rem;
   font-weight: 700;
@@ -113,7 +113,7 @@
 
 .admin-sidebar-nav a:hover,
 .admin-sidebar-nav a.active {
-  background: linear-gradient(135deg, var(--admin-primary), #2a87ff);
+  background: linear-gradient(135deg, var(--admin-primary), #b91c1c);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -251,7 +251,7 @@
   min-width: 190px;
   padding: 0.9rem 1rem;
   border-radius: 1rem;
-  background: linear-gradient(160deg, #0d2d58, #1f5ead);
+  background: linear-gradient(160deg, #7f1d1d, #450a0a);
   color: #f4f8ff;
   display: flex;
   flex-direction: column;

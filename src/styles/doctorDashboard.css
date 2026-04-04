@@ -1,14 +1,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap");
 
 .dd-layout {
-  --dd-bg: #f0f5ff;
+  --dd-bg: #eef7f3;
   --dd-surface: #ffffff;
-  --dd-line: #d9e3f4;
+  --dd-line: #d2e7dd;
   --dd-text: #10223d;
   --dd-muted: #5c6f8c;
-  --dd-primary: #0b63f6;
-  --dd-primary-dark: #06006d;
-  --dd-primary-soft: #e7f0ff;
+  --dd-primary: #1f6f5b;
+  --dd-primary-dark: #0f3d2e;
+  --dd-primary-soft: #dff0e8;
   --dd-success: #dcfce7;
   --dd-success-text: #15803d;
   --dd-warning: #fef3c7;
@@ -27,7 +27,7 @@
 .dd-sidebar {
   width: 244px;
   min-height: 100vh;
-  background: var(--dd-primary-dark);
+  background: linear-gradient(180deg, var(--dd-primary-dark), #1b5f4c);
   color: rgba(255, 255, 255, 0.78);
   display: flex;
   flex-direction: column;
@@ -81,7 +81,7 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--dd-primary), #1984ff);
+  background: linear-gradient(135deg, var(--dd-primary), #2f8f73);
 }
 
 .dd-sidebar-name,
@@ -283,7 +283,7 @@
   gap: 1rem;
   padding: 1.5rem 1.65rem;
   border-radius: 1rem;
-  background: linear-gradient(135deg, var(--dd-primary-dark), #0d40a0);
+  background: linear-gradient(135deg, var(--dd-primary-dark), #2f8f73);
   color: #fff;
   margin-bottom: 1rem;
 }
@@ -512,7 +512,7 @@
 }
 
 .dd-filter-btn.active {
-  background: linear-gradient(135deg, var(--dd-primary), #1984ff);
+  background: linear-gradient(135deg, var(--dd-primary), #2f8f73);
   color: #fff;
 }
 
@@ -581,7 +581,7 @@
 }
 
 .dd-btn-primary {
-  background: linear-gradient(135deg, var(--dd-primary), #1984ff);
+  background: linear-gradient(135deg, var(--dd-primary), #2f8f73);
   color: #fff;
 }
 
