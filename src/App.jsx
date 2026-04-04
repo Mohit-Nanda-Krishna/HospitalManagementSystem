@@ -90,7 +90,7 @@ function App() {
           </ProtectedRoleRoute>
         }
       />
-      <Route path="/doctor-portal" element={<Navigate to="/doctor-dashboard" replace />} />
+      <Route path="/doctor-portal" element={<Navigate to="/doctor-login" replace />} />
       <Route path="/doctor-login" element={<DoctorLogin />} />
       <Route path="/doctor-signup" element={<Navigate to="/doctor-login" replace />} />
       <Route

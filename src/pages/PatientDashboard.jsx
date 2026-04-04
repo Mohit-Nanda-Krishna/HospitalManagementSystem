@@ -559,7 +559,7 @@ function PatientDashboard() {
         {[
           { label: "Upcoming Appointments", value: upcomingAppointments.length, icon: "📅", color: "blue", action: () => setActiveTab("appointments") },
           { label: "Past Visits", value: pastAppointments.length, icon: "🏥", color: "teal", action: () => setActiveTab("records") },
-          { label: "Active Prescriptions", value: prescriptions.length, icon: "💊", color: "green", action: () => setActiveTab("prescriptions") },
+          { label: "Prescriptions", value: prescriptions.length, icon: "💊", color: "green", action: () => setActiveTab("prescriptions") },
           { label: "Pending Dues", value: `₹${billingRecords.filter(b => b.status === "pending").reduce((s, b) => s + (Number(b.amount) || 0), 0).toLocaleString()}`, icon: "💳", color: "amber", action: () => setActiveTab("billing") },
         ].map((stat) => (
           <button key={stat.label} className={`pd-stat-card pd-stat-${stat.color}`} onClick={stat.action}>
@@ -598,7 +598,7 @@ function PatientDashboard() {
 
         <div className="pd-card">
           <div className="pd-card-head">
-            <h3>Active Prescriptions</h3>
+            <h3>Prescriptions</h3>
             <button className="pd-link-btn" onClick={() => setActiveTab("prescriptions")}>View all →</button>
           </div>
           {dashboardDataLoading ? (
