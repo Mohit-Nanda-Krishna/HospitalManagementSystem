@@ -714,7 +714,7 @@ function AdminPanel() {
           <header className="admin-topbar">
             <div>
               <p className="admin-section-eyebrow">Central Command</p>
-              <h2>Good morning, Admin</h2>
+              <h2>Welcome, Admin</h2>
               <p>Monitor hospital activity, manage teams, and respond to capacity changes.</p>
             </div>
 
@@ -726,7 +726,7 @@ function AdminPanel() {
 
               <div className="admin-profile-card">
                 <strong>Gowtham</strong>
-                <span>Super Admin</span>
+                
                 <small>gowtham@hms.com</small>
                 <button type="button" className="admin-profile-action" onClick={handleLogout}>
                   Sign Out
