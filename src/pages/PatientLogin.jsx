@@ -53,9 +53,23 @@ function PatientLogin() {
     }
 
     const userData = userSnap.data();
-    if (userData.role !== "patient") {
+    if (userData.role && userData.role !== "patient") {
       setError("This account is not registered as a Patient. Please use the correct portal.");
       return;
+    }
+
+    if (!userData.role) {
+      await setDoc(
+        userRef,
+        {
+          email: user.email || "",
+          name: user.displayName || userData.name || "Patient",
+          role: "patient",
+          profileCompleted: userData.profileCompleted ?? true,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
     }
 
     // Existing patient routing based on vitals status

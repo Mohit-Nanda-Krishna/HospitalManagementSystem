@@ -351,6 +351,27 @@ function AdminPanel() {
     );
   }, [patients, searchTerm]);
 
+  const filteredDoctors = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) {
+      return doctors;
+    }
+    return doctors.filter((doctor) =>
+      [
+        doctor.name,
+        Array.isArray(doctor.specialization)
+          ? doctor.specialization.join(" ")
+          : doctor.specialization,
+        doctor.email,
+        doctor.phone,
+        doctor.availability,
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [doctors, searchTerm]);
+
   const filteredAppointments = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
     if (!query) {
@@ -1198,8 +1219,8 @@ function AdminPanel() {
                       </button>
                     ),
                   },
-                ]}
-                rows={doctors}
+                ]} 
+                rows={filteredDoctors}
               />
             </div>
           </section>

@@ -253,6 +253,8 @@
   border-radius: 1rem;
   background: linear-gradient(160deg, #0d2d58, #1f5ead);
   color: #f4f8ff;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-profile-card strong,
@@ -283,7 +285,14 @@
 }
 
 .admin-home-link {
-  margin-left: 0.5rem;
+  margin-left: 0;
+  text-align: center;
+  width: 100%;
+}
+
+.admin-profile-action {
+  text-align: center;
+  width: 100%;
 }
 
 .admin-page-section {

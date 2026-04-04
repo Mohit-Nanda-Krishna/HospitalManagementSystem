@@ -542,7 +542,6 @@ function PatientDashboard() {
     <div className="pd-overview">
       <div className="pd-welcome-banner">
         <div className="pd-welcome-text">
-          <p className="pd-eyebrow">Good morning 👋</p>
           <h2>Welcome back, {profile.fullName.split(" ")[0]}!</h2>
           <p className="pd-welcome-sub">Here's a summary of your health activity.</p>
         </div>

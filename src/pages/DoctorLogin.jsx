@@ -30,7 +30,6 @@ function DoctorLogin() {
 
         if (!docSnap.exists()) {
           await signOut(auth);
-          setError("Access denied. Not authorized doctor.");
           return;
         }
 
@@ -46,11 +45,9 @@ function DoctorLogin() {
         }
 
         await signOut(auth);
-        setError("Access denied. Not authorized doctor.");
       } catch (err) {
         console.error("Doctor session check failed", err);
         await signOut(auth);
-        setError("Unable to verify your account right now.");
       } finally {
         setCheckingSession(false);
       }

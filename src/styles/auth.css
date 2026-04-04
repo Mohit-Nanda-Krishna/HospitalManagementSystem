@@ -175,6 +175,8 @@
 
 .auth-back {
   font-size: 0.94rem;
+  margin-top: 0.8rem;
+  display: inline-block;
 }
 
 @media (max-width: 900px) {

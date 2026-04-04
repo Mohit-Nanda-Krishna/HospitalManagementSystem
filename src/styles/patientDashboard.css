@@ -37,7 +37,8 @@
   flex-direction: column;
   position: sticky;
   top: 0;
-  height: 100vh;
+  height: auto;
+  align-self: stretch;
   flex-shrink: 0;
   z-index: 200;
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
