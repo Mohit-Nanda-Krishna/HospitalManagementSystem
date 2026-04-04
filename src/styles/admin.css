@@ -25,6 +25,11 @@
     var(--admin-bg);
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 .admin-layout {
   width: min(1380px, 100%);
   margin: 0 auto;
@@ -490,7 +495,7 @@
 }
 
 .admin-btn.primary {
-  background: linear-gradient(135deg, var(--admin-primary), #2384ff);
+  background: linear-gradient(135deg, var(--admin-primary), #b91c1c);
   color: #ffffff;
 }
 
@@ -570,6 +575,46 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .admin-dashboard-page {
+    padding: 1rem;
+  }
+
+  .admin-topbar {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .admin-topbar-tools {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+
+  .admin-search {
+    flex: 1 1 260px;
+  }
+
+  .admin-profile-card {
+    width: 100%;
+  }
+
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-stats-grid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-management-grid,
+  .admin-chart-grid,
+  .admin-data-grid,
+  .admin-alert-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 920px) {
   .admin-topbar,
   .admin-section-head {
@@ -607,5 +652,9 @@
 
   .admin-home-link {
     margin-left: 0;
+  }
+
+  .admin-btn {
+    width: 100%;
   }
 }

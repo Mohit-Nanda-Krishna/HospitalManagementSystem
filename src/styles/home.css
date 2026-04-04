@@ -150,8 +150,8 @@ body {
 
 .btn-primary {
   color: #fff;
-  background: linear-gradient(135deg, var(--primary), #1984ff);
-  box-shadow: 0 8px 22px rgba(11, 99, 246, 0.35);
+  background: linear-gradient(135deg, #0a52cc, #176fe0);
+  box-shadow: 0 8px 22px rgba(9, 82, 204, 0.38);
 }
 
 .btn-primary:hover {
@@ -278,6 +278,18 @@ body {
   transition: transform 0.22s ease, box-shadow 0.22s ease;
 }
 
+.portal-card:nth-child(1) .card-action {
+  background: linear-gradient(135deg, #0b63f6, #1984ff);
+}
+
+.portal-card:nth-child(2) .card-action {
+  background: linear-gradient(135deg, #1f6f5b, #2f8f73);
+}
+
+.portal-card:nth-child(3) .card-action {
+  background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+}
+
 .portal-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 14px 34px rgba(10, 43, 92, 0.14);
@@ -390,10 +402,41 @@ body {
   }
 }
 
+@media (max-width: 1024px) {
+  .hero-section {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-nav {
+    padding: 1rem 1.6rem;
+  }
+}
+
 @media (max-width: 640px) {
   .home-nav {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.8rem;
+  }
+
+  .hero-content h1 {
+    font-size: clamp(1.8rem, 7vw, 2.4rem);
+  }
+
+  .portal-section {
+    padding: 1rem 1rem 3rem;
+  }
+
+  .portal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-action {
+    width: 100%;
+    text-align: center;
   }
 }

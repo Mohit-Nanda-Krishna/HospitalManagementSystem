@@ -24,6 +24,11 @@
   font-family: "Manrope", "Segoe UI", sans-serif;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 .dd-sidebar {
   width: 244px;
   min-height: 100vh;
@@ -694,6 +699,20 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .dd-content {
+    padding: 1.2rem;
+  }
+
+  .dd-card-grid,
+  .dd-appointment-grid,
+  .dd-stats-grid,
+  .dd-profile-grid,
+  .dd-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 860px) {
   .dd-sidebar {
     position: fixed;
@@ -740,5 +759,9 @@
 
   .dd-search-input {
     max-width: none;
+  }
+
+  .dd-btn {
+    width: 100%;
   }
 }

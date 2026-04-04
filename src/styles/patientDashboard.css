@@ -27,6 +27,11 @@
   background: var(--bg);
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 /* ─── Sidebar ─────────────────────────────────────────────── */
 
 .pd-sidebar {
@@ -1137,6 +1142,21 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .pd-content {
+    padding: 1.2rem;
+  }
+
+  .pd-card-grid,
+  .pd-appointment-grid,
+  .pd-stats-grid,
+  .pd-profile-grid,
+  .pd-form-row,
+  .pd-booking-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 600px) {
   .pd-content {
     padding: 1rem;
@@ -1176,5 +1196,9 @@
   .pd-table-header span:nth-child(n+3),
   .pd-table-row span:nth-child(n+3) {
     display: none;
+  }
+
+  .pd-btn {
+    width: 100%;
   }
 }

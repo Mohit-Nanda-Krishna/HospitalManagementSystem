@@ -14,6 +14,7 @@ function AdminLogin() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState("");
@@ -35,11 +36,9 @@ function AdminLogin() {
         }
 
         await signOut(auth);
-        setError("Unauthorized access");
       } catch (err) {
         console.error("Admin session check failed", err);
         await signOut(auth);
-        setError("Unable to verify admin access. Please try again.");
       } finally {
         setCheckingSession(false);
       }
@@ -141,14 +140,23 @@ function AdminLogin() {
             />
 
             <label htmlFor="login-password">Password</label>
-            <input
-              id="login-password"
-              type="password"
-              placeholder="Enter admin password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="auth-password-field">
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter admin password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="auth-password-toggle"
+                onClick={() => setShowPassword((current) => !current)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            </div>
 
             {error ? <p className="auth-error">{error}</p> : null}
 

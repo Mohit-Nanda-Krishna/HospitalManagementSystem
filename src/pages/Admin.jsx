@@ -385,6 +385,29 @@ function AdminPanel() {
     );
   }, [appointments, searchTerm]);
 
+  const filteredBeds = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) {
+      return beds;
+    }
+    return beds.filter((bed) =>
+      [bed.id, bed.ward, bed.patient, bed.status, bed.bedType]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [beds, searchTerm]);
+
+  const filteredInventory = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) {
+      return inventoryData.map((item) => ({ ...item, id: item.item }));
+    }
+    return inventoryData
+      .filter((item) => [item.item, item.vendor].join(" ").toLowerCase().includes(query))
+      .map((item) => ({ ...item, id: item.item }));
+  }, [searchTerm]);
+
   const totalBeds = beds.length;
   const availableBeds = beds.filter((bed) => bed.status === "Available").length;
   const occupiedBeds = beds.filter((bed) => bed.status === "Occupied").length;
@@ -1565,7 +1588,7 @@ function AdminPanel() {
                   },
                   { key: "status", label: "Status" },
                 ]}
-                rows={beds}
+                rows={filteredBeds}
               />
             </div>
           </section>
@@ -1608,7 +1631,7 @@ function AdminPanel() {
                 { key: "threshold", label: "Threshold" },
                 { key: "vendor", label: "Vendor" },
               ]}
-              rows={inventoryData.map((item) => ({ ...item, id: item.item }))}
+              rows={filteredInventory}
             />
           </section>
         </section>

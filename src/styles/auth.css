@@ -15,6 +15,11 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  overflow-x: hidden;
+}
+
 .auth-page {
   min-height: 100vh;
   margin: 0;
@@ -92,6 +97,28 @@
 .auth-form {
   display: grid;
   gap: 0.55rem;
+}
+
+.auth-password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-password-field input {
+  padding-right: 3.2rem;
+}
+
+.auth-password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  border: none;
+  background: transparent;
+  color: var(--auth-primary-dark);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.2rem 0.3rem;
 }
 
 .auth-form label {
@@ -185,6 +212,17 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .auth-page {
+    padding: 1.2rem;
+  }
+
+  .auth-card,
+  .auth-brand-panel {
+    padding: 2rem 1.6rem;
+  }
+}
+
 @media (max-width: 560px) {
   .auth-page {
     padding: 1rem;
@@ -193,5 +231,9 @@
   .auth-brand-panel,
   .auth-card {
     padding: 1.5rem 1.2rem;
+  }
+
+  .auth-btn {
+    width: 100%;
   }
 }
