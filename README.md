@@ -56,6 +56,12 @@ Generate optimized production artifacts:
 npm run build
 ```
 
+### 4. Preview 
+View the preview on local host 
+```bash
+npm run preview 
+```
+
 ---
 
 ## 🔑 Accessing Portals
@@ -74,4 +80,12 @@ npm run build
 ---
 
 ## 👨‍💻 Developed by
-*Part of the Hospital Management System Project.*
+MOHIT NANDA KRISHNA PABBATI (24BCI0107)
+Arjun M Kandhan             (24BDS0271) 
+ABHINAV ANNAM               (24BCE0578)
+DADIBATHINA GOWTHAM REDDY   (24BAI0224)
+DAGGUPATI GAGAN SAI KOUSHIK (23BCE0397)
+
+
+
+
