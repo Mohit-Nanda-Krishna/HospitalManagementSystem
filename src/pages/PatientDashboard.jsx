@@ -13,8 +13,16 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
+  runTransaction,
 } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import {
+  buildAppointmentSlotId,
+  expandDoctorTimeSlotsForDay,
+  getDayNameFromDate,
+  isDateWithinAvailability,
+  normalizeDoctorTimeSlots,
+} from "../utils/appointmentSlots";
 import "../styles/patientDashboard.css";
 
 const NAV_ITEMS = [
@@ -138,13 +146,18 @@ function PatientDashboard() {
 
   const [doctors, setDoctors] = useState([]);
   const [doctorsBySpecialty, setDoctorsBySpecialty] = useState({});
+  const [unavailableDoctorSlots, setUnavailableDoctorSlots] = useState([]);
 
   useEffect(() => {
     // Fetch doctors
     const fetchDoctors = async () => {
       const q = query(collection(db, "doctors"));
       const snapshot = await getDocs(q);
-      const docsList = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+      const docsList = snapshot.docs.map(d => ({
+        id: d.id,
+        ...d.data(),
+        timeSlots: normalizeDoctorTimeSlots(d.data().timeSlots),
+      }));
       setDoctors(docsList);
 
       const bySpec = {};
@@ -273,6 +286,38 @@ function PatientDashboard() {
       unsubscribePatientId();
     };
   }, [currentUserUid]);
+
+  useEffect(() => {
+    if (!appointmentForm.doctorId || !appointmentForm.date) {
+      setUnavailableDoctorSlots([]);
+      return;
+    }
+
+    const slotQuery = query(
+      collection(db, "appointments"),
+      where("doctorId", "==", appointmentForm.doctorId),
+      where("date", "==", appointmentForm.date)
+    );
+
+    const unsubscribe = onSnapshot(
+      slotQuery,
+      (snapshot) => {
+        const occupiedSlots = snapshot.docs
+          .map((item) => item.data())
+          .filter((item) => (item.status || "").toLowerCase() !== "cancelled")
+          .map((item) => item.time)
+          .filter(Boolean);
+
+        setUnavailableDoctorSlots(occupiedSlots);
+      },
+      (error) => {
+        console.error("Doctor slot fetch error:", error);
+        setUnavailableDoctorSlots([]);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [appointmentForm.date, appointmentForm.doctorId]);
 
   const [showBookForm, setShowBookForm] = useState(false);
   const [prescriptions, setPrescriptions] = useState([]);
@@ -463,7 +508,45 @@ function PatientDashboard() {
   const handleBookAppointment = async (event) => {
     event.preventDefault();
     try {
-      await addDoc(collection(db, "appointments"), {
+      const selectedDoctor = doctors.find((doctor) => doctor.id === appointmentForm.doctorId);
+      if (!isDateWithinAvailability(appointmentForm.date, selectedDoctor?.availability)) {
+        alert("The selected doctor is not available on that day. Please choose a valid date.");
+        return;
+      }
+
+      const existingAppointmentQuery = query(
+        collection(db, "appointments"),
+        where("doctorId", "==", appointmentForm.doctorId),
+        where("date", "==", appointmentForm.date),
+        where("time", "==", appointmentForm.time)
+      );
+      const existingAppointmentSnap = await getDocs(existingAppointmentQuery);
+      const slotTaken = existingAppointmentSnap.docs.some(
+        (item) => (item.data().status || "").toLowerCase() !== "cancelled"
+      );
+
+      if (slotTaken) {
+        alert("This time slot has already been booked. Please choose another slot.");
+        return;
+      }
+
+      const appointmentRef = doc(
+        db,
+        "appointments",
+        buildAppointmentSlotId(
+          appointmentForm.doctorId,
+          appointmentForm.date,
+          appointmentForm.time
+        )
+      );
+
+      await runTransaction(db, async (transaction) => {
+        const existingSlotDoc = await transaction.get(appointmentRef);
+        if (existingSlotDoc.exists()) {
+          throw new Error("slot-already-booked");
+        }
+
+        transaction.set(appointmentRef, {
         patientUid: currentUserUid,
         patientName: profile.fullName,
         doctorId: appointmentForm.doctorId,
@@ -473,14 +556,33 @@ function PatientDashboard() {
         time: appointmentForm.time,
         status: "confirmed",
         createdAt: serverTimestamp()
+        });
       });
       setShowBookForm(false);
       setAppointmentForm(prev => ({...prev, date: "", time: ""}));
     } catch(err) {
       console.error("Booking error:", err);
-      alert("Failed to book appointment.");
+      if (err.message === "slot-already-booked") {
+        alert("This time slot has already been booked. Please choose another slot.");
+      } else {
+        alert("Failed to book appointment.");
+      }
     }
   };
+
+  const selectedDoctorSlotOptions = useMemo(() => {
+    const selectedDoctor = doctors.find((doctor) => doctor.id === appointmentForm.doctorId);
+    if (!isDateWithinAvailability(appointmentForm.date, selectedDoctor?.availability)) {
+      return [];
+    }
+
+    const expandedSlots = expandDoctorTimeSlotsForDay(
+      selectedDoctor?.timeSlots || [],
+      getDayNameFromDate(appointmentForm.date)
+    );
+
+    return expandedSlots.filter((slot) => !unavailableDoctorSlots.includes(slot.time));
+  }, [appointmentForm.date, appointmentForm.doctorId, doctors, unavailableDoctorSlots]);
 
   const handlePrescriptionDownload = (prescription) => {
     const medicines = Array.isArray(prescription.medicines)
@@ -717,8 +819,8 @@ function PatientDashboard() {
                 required
               >
                 <option value="">Select a Slot</option>
-                {doctors.find(d => d.id === appointmentForm.doctorId)?.timeSlots?.map((slot, idx) => (
-                  <option key={idx} value={slot}>{slot}</option>
+                {selectedDoctorSlotOptions.map((slot) => (
+                  <option key={`${slot.day}-${slot.time}`} value={slot.time}>{slot.display}</option>
                 ))}
               </select>
             </div>

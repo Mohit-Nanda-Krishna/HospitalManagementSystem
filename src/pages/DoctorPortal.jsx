@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { collection, query, where, onSnapshot, doc, getDoc, updateDoc, getDocs } from "firebase/firestore";
 import { auth, db } from "../firebase";
+import { getAppointmentSortValue } from "../utils/appointmentSlots";
 
 function DoctorPortal() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ function DoctorPortal() {
   const [loading, setLoading] = useState(true);
   const [doctorProfile, setDoctorProfile] = useState(null);
   const [appointments, setAppointments] = useState([]);
+  const [patientHistory, setPatientHistory] = useState([]);
 
   useEffect(() => {
     let unsubscribeApt = null;
@@ -38,7 +40,7 @@ function DoctorPortal() {
               const aptQuery = query(collection(db, "appointments"), where("doctorId", "==", doctorMatch.id));
               unsubscribeApt = onSnapshot(aptQuery, (snapshot) => {
                 const aptData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                aptData.sort((a,b) => new Date(`${b.date}T${b.time}`) - new Date(`${a.date}T${a.time}`));
+                aptData.sort((a, b) => getAppointmentSortValue(b.date, b.time) - getAppointmentSortValue(a.date, a.time));
                 setAppointments(aptData);
               });
               setLoading(false);
@@ -79,18 +81,6 @@ function DoctorPortal() {
   const handleLogout = () => {
     signOut(auth);
   };
-
-  if (loading) return <div style={{padding: "2rem"}}>Verifying credentials...</div>;
-
-  if (!doctorProfile) return (
-    <div style={{padding: "2rem"}}>
-      <h2>Account Pending</h2>
-      <p>Your account is registered but hasn't been linked to a doctor profile by the Admin.</p>
-      <button onClick={handleLogout} style={{padding: '0.5rem 1rem'}}>Logout</button>
-    </div>
-  );
-
-  const [patientHistory, setPatientHistory] = useState([]);
   
   useEffect(() => {
     if (appointments.length > 0 && activeTab === "history") {
@@ -109,6 +99,16 @@ function DoctorPortal() {
       fetchPatientRecords();
     }
   }, [appointments, activeTab]);
+
+  if (loading) return <div style={{padding: "2rem"}}>Verifying credentials...</div>;
+
+  if (!doctorProfile) return (
+    <div style={{padding: "2rem"}}>
+      <h2>Account Pending</h2>
+      <p>Your account is registered but hasn't been linked to a doctor profile by the Admin.</p>
+      <button onClick={handleLogout} style={{padding: '0.5rem 1rem'}}>Logout</button>
+    </div>
+  );
 
   const renderContent = () => {
     switch (activeTab) {

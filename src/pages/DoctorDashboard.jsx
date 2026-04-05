@@ -14,6 +14,7 @@ import {
   updateDoc,
   where,
 } from "firebase/firestore";
+import { getAppointmentSortValue } from "../utils/appointmentSlots";
 import DoctorSidebar from "../components/Doctor/DoctorSidebar";
 import DoctorTopbar from "../components/Doctor/DoctorTopbar";
 import {
@@ -44,8 +45,8 @@ function normalizeSpecialization(specialization) {
 
 function sortByDateTime(items) {
   return [...items].sort((first, second) => {
-    const firstValue = new Date(`${first.date || "1970-01-01"}T${first.time || "00:00"}`).getTime();
-    const secondValue = new Date(`${second.date || "1970-01-01"}T${second.time || "00:00"}`).getTime();
+    const firstValue = getAppointmentSortValue(first.date, first.time);
+    const secondValue = getAppointmentSortValue(second.date, second.time);
     return secondValue - firstValue;
   });
 }

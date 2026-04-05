@@ -9,6 +9,7 @@ import {
   getDoc,
   getDocs,
   query,
+  runTransaction,
   serverTimestamp,
   setDoc,
   where,
@@ -28,6 +29,14 @@ import {
   YAxis,
 } from "recharts";
 import { auth, createDoctorAuthAccount, db } from "../firebase";
+import {
+  buildAppointmentSlotId,
+  expandDoctorTimeSlotsForDay,
+  getDayNameFromDate,
+  getAppointmentSortValue,
+  isDateWithinAvailability,
+  normalizeDoctorTimeSlots,
+} from "../utils/appointmentSlots";
 import "../styles/admin.css";
 
 const initialBeds = [
@@ -213,8 +222,8 @@ function AdminPanel() {
     email: "",
     password: "",
     phone: "",
-    availabilityFromDay: "",
-    availabilityToDay: "",
+    availabilityDays: [],
+    slotDay: "",
     slotStart: "",
     slotEnd: "",
     timeSlots: [],
@@ -449,10 +458,38 @@ function AdminPanel() {
         id: doctor.id,
         name: doctor.name,
         department: getDoctorDepartment(doctor),
-        timeSlots: Array.isArray(doctor.timeSlots) ? doctor.timeSlots : [],
+        availability: doctor.availability || "",
+        timeSlots: normalizeDoctorTimeSlots(doctor.timeSlots),
       })),
     [doctors]
   );
+
+  const availableAppointmentSlots = useMemo(() => {
+    const selectedDoctor = doctorOptions.find((doctor) => doctor.id === appointmentForm.doctorId);
+    if (!selectedDoctor) {
+      return [];
+    }
+
+    if (!isDateWithinAvailability(appointmentForm.date, selectedDoctor.availability)) {
+      return [];
+    }
+
+    const expandedSlots = expandDoctorTimeSlotsForDay(
+      selectedDoctor.timeSlots || [],
+      getDayNameFromDate(appointmentForm.date)
+    );
+    const occupiedSlots = appointments
+      .filter(
+        (appointment) =>
+          appointment.doctorId === appointmentForm.doctorId &&
+          appointment.date === appointmentForm.date &&
+          (appointment.status || "").toLowerCase() !== "cancelled"
+      )
+      .map((appointment) => appointment.time)
+      .filter(Boolean);
+
+    return expandedSlots.filter((slot) => !occupiedSlots.includes(slot.time));
+  }, [appointmentForm.date, appointmentForm.doctorId, appointments, doctorOptions]);
 
   const handleDoctorSubmit = async (event) => {
     event.preventDefault();
@@ -462,14 +499,11 @@ function AdminPanel() {
       email,
       password,
       phone,
-      availabilityFromDay,
-      availabilityToDay,
+      availabilityDays,
       timeSlots,
     } = doctorForm;
     const parsedTimeSlots = Array.isArray(timeSlots) ? timeSlots.filter(Boolean) : [];
-    const availability = availabilityFromDay && availabilityToDay
-      ? `${availabilityFromDay} - ${availabilityToDay}`
-      : "";
+    const availability = Array.isArray(availabilityDays) ? availabilityDays.join(", ") : "";
     const normalizedPhone = normalizePhoneNumber(phone);
 
     if (
@@ -481,6 +515,16 @@ function AdminPanel() {
       setDoctorError(
         "Enter doctor name, email, specialization, and a password of at least 6 characters."
       );
+      return;
+    }
+
+    if (!availabilityDays.length) {
+      setDoctorError("Select at least one available day for the doctor.");
+      return;
+    }
+
+    if (!parsedTimeSlots.length) {
+      setDoctorError("Add at least one day-specific time slot for the doctor.");
       return;
     }
 
@@ -548,8 +592,8 @@ function AdminPanel() {
         email: "",
         password: "",
         phone: "",
-        availabilityFromDay: "",
-        availabilityToDay: "",
+        availabilityDays: [],
+        slotDay: "",
         slotStart: "",
         slotEnd: "",
         timeSlots: [],
@@ -660,6 +704,28 @@ function AdminPanel() {
     }
 
     try {
+      const selectedDoctor = doctorOptions.find((doctor) => doctor.id === doctorId);
+      if (!isDateWithinAvailability(date, selectedDoctor?.availability)) {
+        setAppointmentError("The selected doctor is not available on that day.");
+        return;
+      }
+
+      const existingAppointmentQuery = query(
+        collection(db, "appointments"),
+        where("doctorId", "==", doctorId),
+        where("date", "==", date),
+        where("time", "==", time)
+      );
+      const existingAppointmentSnap = await getDocs(existingAppointmentQuery);
+      const slotTaken = existingAppointmentSnap.docs.some(
+        (item) => (item.data().status || "").toLowerCase() !== "cancelled"
+      );
+
+      if (slotTaken) {
+        setAppointmentError("This time slot is already booked for the selected doctor.");
+        return;
+      }
+
       const payload = {
         patientUid,
         patientName,
@@ -671,12 +737,24 @@ function AdminPanel() {
         status: "pending",
         createdAt: serverTimestamp(),
       };
+      const appointmentRef = doc(
+        db,
+        "appointments",
+        buildAppointmentSlotId(doctorId, date, time)
+      );
 
-      const addedAppointment = await addDoc(collection(db, "appointments"), payload);
+      await runTransaction(db, async (transaction) => {
+        const existingSlotDoc = await transaction.get(appointmentRef);
+        if (existingSlotDoc.exists()) {
+          throw new Error("slot-already-booked");
+        }
+
+        transaction.set(appointmentRef, payload);
+      });
 
       setAppointments((current) => [
         {
-          id: addedAppointment.id,
+          id: appointmentRef.id,
           ...payload,
           patient: patientName,
           department,
@@ -695,7 +773,11 @@ function AdminPanel() {
       setAppointmentError("");
     } catch (error) {
       console.error("Failed to book appointment", error);
-      setAppointmentError("Unable to save appointment to Firestore.");
+      if (error.message === "slot-already-booked") {
+        setAppointmentError("This time slot is already booked for the selected doctor.");
+      } else {
+        setAppointmentError("Unable to save appointment to Firestore.");
+      }
     }
   };
 
@@ -782,8 +864,8 @@ function AdminPanel() {
   };
 
   const handleAddDoctorTimeSlot = () => {
-    if (!doctorForm.slotStart || !doctorForm.slotEnd) {
-      setDoctorError("Select both slot start and slot end times.");
+    if (!doctorForm.slotDay || !doctorForm.slotStart || !doctorForm.slotEnd) {
+      setDoctorError("Select a day, slot start, and slot end time.");
       return;
     }
 
@@ -792,23 +874,80 @@ function AdminPanel() {
       return;
     }
 
-    const nextSlot = `${formatTimeLabel(doctorForm.slotStart)} - ${formatTimeLabel(doctorForm.slotEnd)}`;
+    const targetDays =
+      doctorForm.slotDay === "__ALL__"
+        ? doctorForm.availabilityDays
+        : [doctorForm.slotDay];
+
+    if (!targetDays.length) {
+      setDoctorError("Select at least one available day before adding a slot.");
+      return;
+    }
+
+    const nextSlots = targetDays.map((day) => ({
+      day,
+      start: formatTimeLabel(doctorForm.slotStart),
+      end: formatTimeLabel(doctorForm.slotEnd),
+      label: `${formatTimeLabel(doctorForm.slotStart)} - ${formatTimeLabel(doctorForm.slotEnd)}`,
+    }));
 
     setDoctorForm((current) => ({
       ...current,
-      timeSlots: current.timeSlots.includes(nextSlot)
-        ? current.timeSlots
-        : [...current.timeSlots, nextSlot],
+      timeSlots: nextSlots.reduce((updatedSlots, nextSlot) => {
+        if (
+          updatedSlots.some(
+            (slot) => slot.day === nextSlot.day && slot.label === nextSlot.label
+          )
+        ) {
+          return updatedSlots;
+        }
+
+        return [...updatedSlots, nextSlot];
+      }, current.timeSlots),
+      slotDay: "",
       slotStart: "",
       slotEnd: "",
     }));
     setDoctorError("");
   };
 
+  const handleToggleDoctorAvailabilityDay = (day) => {
+    setDoctorForm((current) => {
+      const removingDay = current.availabilityDays.includes(day);
+      const nextDays = removingDay
+        ? current.availabilityDays.filter((item) => item !== day)
+        : [...current.availabilityDays, day];
+
+      return {
+        ...current,
+        availabilityDays: DAY_OPTIONS.filter((item) => nextDays.includes(item)),
+        slotDay: current.slotDay === day && removingDay ? "" : current.slotDay,
+        timeSlots: removingDay
+          ? current.timeSlots.filter((slot) => slot.day !== day)
+          : current.timeSlots,
+      };
+    });
+  };
+
+  const handleToggleAllDoctorAvailabilityDays = () => {
+    setDoctorForm((current) => {
+      const enableAllDays = current.availabilityDays.length !== DAY_OPTIONS.length;
+
+      return {
+        ...current,
+        availabilityDays: enableAllDays ? [...DAY_OPTIONS] : [],
+        slotDay: enableAllDays ? current.slotDay : "",
+        timeSlots: enableAllDays ? current.timeSlots : [],
+      };
+    });
+  };
+
   const handleRemoveDoctorTimeSlot = (slotToRemove) => {
     setDoctorForm((current) => ({
       ...current,
-      timeSlots: current.timeSlots.filter((slot) => slot !== slotToRemove),
+      timeSlots: current.timeSlots.filter(
+        (slot) => !(slot.day === slotToRemove.day && slot.label === slotToRemove.label)
+      ),
     }));
   };
 
@@ -988,8 +1127,8 @@ function AdminPanel() {
                 rows={[...filteredAppointments]
                   .sort(
                     (a, b) =>
-                      new Date(`${a.date}T${a.time}`) -
-                      new Date(`${b.date}T${b.time}`)
+                      getAppointmentSortValue(a.date, a.time) -
+                      getAppointmentSortValue(b.date, b.time)
                   )
                   .slice(0, 6)}
               />
@@ -1111,44 +1250,46 @@ function AdminPanel() {
                   />
 
                   <label htmlFor="doctor-availability">Availability</label>
-                  <div className="admin-inline-time-grid">
-                    <select
-                      id="doctor-availability"
-                      value={doctorForm.availabilityFromDay}
-                      onChange={(event) =>
-                        setDoctorForm((current) => ({
-                          ...current,
-                          availabilityFromDay: event.target.value,
-                        }))
-                      }
+                  <div id="doctor-availability" className="admin-slot-list">
+                    <button
+                      type="button"
+                      className={`admin-slot-chip ${doctorForm.availabilityDays.length === DAY_OPTIONS.length ? "active" : ""}`}
+                      onClick={handleToggleAllDoctorAvailabilityDays}
                     >
-                      <option value="">From day</option>
-                      {DAY_OPTIONS.map((day) => (
-                        <option key={day} value={day}>
-                          {day}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      value={doctorForm.availabilityToDay}
-                      onChange={(event) =>
-                        setDoctorForm((current) => ({
-                          ...current,
-                          availabilityToDay: event.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">To day</option>
-                      {DAY_OPTIONS.map((day) => (
-                        <option key={day} value={day}>
-                          {day}
-                        </option>
-                      ))}
-                    </select>
+                      All Days
+                    </button>
+                    {DAY_OPTIONS.map((day) => (
+                      <button
+                        key={day}
+                        type="button"
+                        className={`admin-slot-chip ${doctorForm.availabilityDays.includes(day) ? "active" : ""}`}
+                        onClick={() => handleToggleDoctorAvailabilityDay(day)}
+                      >
+                        {day}
+                      </button>
+                    ))}
                   </div>
 
                   <label htmlFor="doctor-time-slots">Time slots</label>
                   <div className="admin-inline-time-grid">
+                    <select
+                      id="doctor-time-day"
+                      value={doctorForm.slotDay}
+                      onChange={(event) =>
+                        setDoctorForm((current) => ({
+                          ...current,
+                          slotDay: event.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Select day</option>
+                      <option value="__ALL__">All selected days</option>
+                      {doctorForm.availabilityDays.map((day) => (
+                        <option key={day} value={day}>
+                          {day}
+                        </option>
+                      ))}
+                    </select>
                     <input
                       id="doctor-time-slots"
                       type="time"
@@ -1182,17 +1323,17 @@ function AdminPanel() {
                     <div className="admin-slot-list">
                       {doctorForm.timeSlots.map((slot) => (
                         <button
-                          key={slot}
+                          key={`${slot.day}-${slot.label}`}
                           className="admin-slot-chip"
                           onClick={() => handleRemoveDoctorTimeSlot(slot)}
                           type="button"
                         >
-                          {slot} ×
+                          {slot.day} • {slot.label} ×
                         </button>
                       ))}
                     </div>
                   ) : (
-                    <p className="admin-field-hint">Pick a start and end time, then add one or more slots.</p>
+                    <p className="admin-field-hint">Pick a day, then add one or more time ranges for that day.</p>
                   )}
 
                   {doctorError ? <p className="admin-form-error">{doctorError}</p> : null}
@@ -1458,13 +1599,11 @@ function AdminPanel() {
                     }
                   >
                     <option value="">Select available slot</option>
-                    {doctorOptions
-                      .find((doctor) => doctor.id === appointmentForm.doctorId)
-                      ?.timeSlots?.map((slot) => (
-                        <option key={slot} value={slot}>
-                          {slot}
-                        </option>
-                      ))}
+                    {availableAppointmentSlots.map((slot) => (
+                      <option key={`${slot.day}-${slot.time}`} value={slot.time}>
+                        {slot.display}
+                      </option>
+                    ))}
                   </select>
 
                   {appointmentError ? (
