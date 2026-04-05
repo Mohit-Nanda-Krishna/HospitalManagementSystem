@@ -844,9 +844,14 @@ function AdminPanel() {
 
           <nav className="admin-sidebar-nav">
             {navigationItems.map((item) => (
-              <a key={item.id} href={`#${item.id}`} className={activeNav === item.id ? "active" : ""} onClick={() => setActiveNav(item.id)}>
+              <button
+                key={item.id}
+                type="button"
+                className={activeNav === item.id ? "active" : ""}
+                onClick={() => setActiveNav(item.id)}
+              >
                 {item.label}
-              </a>
+              </button>
             ))}
           </nav>
 
@@ -885,7 +890,7 @@ function AdminPanel() {
             </div>
           </header>
 
-          <section id="overview" className="admin-page-section">
+          <section id="overview" className={`admin-page-section ${activeNav === "overview" ? "active" : ""}`}>
             <SectionHeader eyebrow="Live Overview" title="Hospital performance snapshot" description="Core metrics, trend views, and watchlist items for today’s operations." />
 
             <div className="admin-stats-grid">
@@ -1029,7 +1034,7 @@ function AdminPanel() {
             </div>
           </section>
 
-          <section id="doctors" className="admin-page-section">
+          <section id="doctors" className={`admin-page-section ${activeNav === "doctors" ? "active" : ""}`}>
             <SectionHeader
               eyebrow="Doctor Management"
               title="Add and review doctors"
@@ -1248,7 +1253,7 @@ function AdminPanel() {
             </div>
           </section>
 
-          <section id="patients" className="admin-page-section">
+          <section id="patients" className={`admin-page-section ${activeNav === "patients" ? "active" : ""}`}>
             <SectionHeader
               eyebrow="Patient Registry"
               title="Add and manage patient records"
@@ -1382,7 +1387,7 @@ function AdminPanel() {
             </div>
           </section>
 
-          <section id="appointments" className="admin-page-section">
+          <section id="appointments" className={`admin-page-section ${activeNav === "appointments" ? "active" : ""}`}>
             <SectionHeader
               eyebrow="Appointments"
               title="Book and monitor appointments"
@@ -1498,7 +1503,7 @@ function AdminPanel() {
             </div>
           </section>
 
-          <section id="beds" className="admin-page-section">
+          <section id="beds" className={`admin-page-section ${activeNav === "beds" ? "active" : ""}`}>
             <SectionHeader
               eyebrow="Bed Management"
               title="Track occupancy and assign beds"
@@ -1593,7 +1598,7 @@ function AdminPanel() {
             </div>
           </section>
 
-          <section id="billing" className="admin-page-section">
+          <section id="billing" className={`admin-page-section ${activeNav === "billing" ? "active" : ""}`}>
             <SectionHeader
               eyebrow="Billing"
               title="Revenue snapshot"
@@ -1615,7 +1620,7 @@ function AdminPanel() {
             </div>
           </section>
 
-          <section id="inventory" className="admin-page-section">
+          <section id="inventory" className={`admin-page-section ${activeNav === "inventory" ? "active" : ""}`}>
             <SectionHeader
               eyebrow="Inventory"
               title="Critical supplies watchlist"
