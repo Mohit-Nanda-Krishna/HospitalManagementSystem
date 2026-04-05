@@ -433,6 +433,10 @@ export function DoctorProfileSection({
               <span>Phone</span>
               <strong>{doctorProfile?.phone || "Not available"}</strong>
             </div>
+            <div className="dd-detail-block">
+              <span>Availability</span>
+              <strong>{doctorProfile?.availability || "Not available"}</strong>
+            </div>
           </div>
         </article>
 
@@ -467,7 +471,14 @@ export function DoctorProfileSection({
             <label>
               <span>Phone</span>
               <input
-                onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value }))}
+                inputMode="numeric"
+                maxLength={10}
+                onChange={(event) =>
+                  setProfileForm((current) => ({
+                    ...current,
+                    phone: String(event.target.value || "").replace(/\D/g, "").slice(0, 10),
+                  }))
+                }
                 type="text"
                 value={profileForm.phone}
               />

@@ -130,8 +130,8 @@ function DoctorPortal() {
                 <div style={{minWidth: '100px', textAlign: 'right'}}>
                   <span style={{
                     padding: '0.2rem 0.6rem', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold',
-                    background: s.status === 'approved' ? '#dcfce7' : s.status === 'rejected' ? '#fee2e2' : '#fef9c3',
-                    color: s.status === 'approved' ? '#166534' : s.status === 'rejected' ? '#991b1b' : '#854d0e',
+                    background: s.status === 'completed' ? '#dcfce7' : s.status === 'cancelled' ? '#fee2e2' : s.status === 'confirmed' ? '#e0f2fe' : '#fef9c3',
+                    color: s.status === 'completed' ? '#166534' : s.status === 'cancelled' ? '#991b1b' : s.status === 'confirmed' ? '#075985' : '#854d0e',
                   }}>{s.status.toUpperCase()}</span>
                 </div>
               </div>
@@ -168,29 +168,29 @@ function DoctorPortal() {
         );
       case "updates":
         const pendingApts = appointments.filter(a => a.status === 'pending');
-        const approvedCount = appointments.filter(a => a.status === 'approved').length;
-        const totalRelevant = appointments.filter(a => a.status !== 'rejected').length;
+        const completedCount = appointments.filter(a => a.status === 'completed').length;
+        const totalRelevant = appointments.filter(a => a.status !== 'cancelled').length;
         
         return (
           <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "8px", boxShadow: "0 4px 12px rgba(0,0,0,0.05)" }}>
-            <h2 style={{ marginTop: 0 }}>Consultation & Approval Pipeline</h2>
+            <h2 style={{ marginTop: 0 }}>Consultation Pipeline</h2>
             
             <div style={{ padding: "1.5rem", border: "1px solid #bae6fd", background: "#f0f9ff", borderRadius: "12px", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1.5rem" }}>
               <div style={{ fontSize: "2.5rem" }}>📈</div>
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
                   <strong style={{ fontSize: "1.1rem", color: "#0369a1" }}>Daily Progress</strong>
-                  <span style={{ fontWeight: "700", color: "#0ea5e9" }}>{Math.round((approvedCount / (totalRelevant || 1)) * 100)}% Complete</span>
+                  <span style={{ fontWeight: "700", color: "#0ea5e9" }}>{Math.round((completedCount / (totalRelevant || 1)) * 100)}% Complete</span>
                 </div>
                 <div style={{ height: "10px", background: "#e0f2fe", borderRadius: "5px", overflow: "hidden" }}>
-                  <div style={{ width: `${(approvedCount / (totalRelevant || 1)) * 100}%`, height: "100%", background: "#0ea5e9", transition: "width 0.4s ease" }}></div>
+                  <div style={{ width: `${(completedCount / (totalRelevant || 1)) * 100}%`, height: "100%", background: "#0ea5e9", transition: "width 0.4s ease" }}></div>
                 </div>
-                <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", color: "#0ea5e9" }}>{approvedCount} Approved | {pendingApts.length} Pending Actions</p>
+                <p style={{ margin: "0.5rem 0 0", fontSize: "0.9rem", color: "#0ea5e9" }}>{completedCount} Completed | {pendingApts.length} Pending Actions</p>
               </div>
             </div>
 
-            <h3 style={{ borderBottom: "2px solid #f1f5f9", paddingBottom: "0.5rem" }}>Pending Approvals</h3>
-            {pendingApts.length === 0 ? <p style={{ color: "#64748b", fontStyle: "italic" }}>All caught up! No pending consultation requests.</p> : (
+            <h3 style={{ borderBottom: "2px solid #f1f5f9", paddingBottom: "0.5rem" }}>Pending Consultations</h3>
+            {pendingApts.length === 0 ? <p style={{ color: "#64748b", fontStyle: "italic" }}>All caught up! No pending consultations.</p> : (
               <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
                 {pendingApts.map(a => (
                   <div key={a.id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "1rem", background: "#fff", border: "1px solid #e2e8f0", borderRadius: "8px" }}>
@@ -200,16 +200,16 @@ function DoctorPortal() {
                     </div>
                     <div style={{ display: "flex", gap: "0.5rem" }}>
                        <button 
-                         onClick={() => handleStatusUpdate(a.id, 'approved')} 
+                         onClick={() => handleStatusUpdate(a.id, 'completed')} 
                          style={{ background: "#22c55e", color: "white", border: "none", padding: "0.6rem 1rem", borderRadius: "6px", cursor: "pointer", fontWeight: "600" }}
                        >
-                         Approve
+                         Complete
                        </button>
                        <button 
-                         onClick={() => handleStatusUpdate(a.id, 'rejected')} 
+                         onClick={() => handleStatusUpdate(a.id, 'cancelled')} 
                          style={{ background: "#ef4444", color: "white", border: "none", padding: "0.6rem 1rem", borderRadius: "6px", cursor: "pointer", fontWeight: "600" }}
                        >
-                         Reject
+                         Cancel
                        </button>
                     </div>
                   </div>

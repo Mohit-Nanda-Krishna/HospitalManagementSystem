@@ -117,6 +117,14 @@ function getDayStart(dateValue) {
   return resolvedDate;
 }
 
+function normalizeLabel(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
 function PatientDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
@@ -156,6 +164,9 @@ function PatientDashboard() {
       const docsList = snapshot.docs.map(d => ({
         id: d.id,
         ...d.data(),
+        specialization: Array.isArray(d.data().specialization)
+          ? d.data().specialization.map((item) => normalizeLabel(item))
+          : normalizeLabel(d.data().specialization),
         timeSlots: normalizeDoctorTimeSlots(d.data().timeSlots),
       }));
       setDoctors(docsList);
@@ -164,7 +175,7 @@ function PatientDashboard() {
       docsList.forEach(d => {
         const specs = Array.isArray(d.specialization) 
           ? d.specialization 
-          : (d.specialization ? [d.specialization] : ["General"]);
+          : (d.specialization ? [normalizeLabel(d.specialization)] : ["General"]);
         
         specs.forEach(spec => {
           if (!bySpec[spec]) bySpec[spec] = [];

@@ -37,10 +37,26 @@ const TAB_LABELS = {
 
 function normalizeSpecialization(specialization) {
   if (Array.isArray(specialization)) {
-    return specialization.join(", ");
+    return specialization
+      .map((item) =>
+        String(item || "")
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ")
+          .replace(/\b\w/g, (match) => match.toUpperCase())
+      )
+      .join(", ");
   }
 
-  return specialization || "General";
+  return String(specialization || "General")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function normalizePhoneNumber(phoneValue) {
+  return String(phoneValue || "").replace(/\D/g, "").slice(0, 10);
 }
 
 function sortByDateTime(items) {
@@ -330,21 +346,50 @@ function DoctorDashboard() {
       setProfileSaving(true);
       const specializationArray = profileForm.specialization
         .split(",")
-        .map((item) => item.trim())
+        .map((item) => normalizeSpecialization(item))
         .filter(Boolean);
+      const normalizedPhone = normalizePhoneNumber(profileForm.phone);
+      const trimmedAvailability = profileForm.availability.trim();
 
-      await updateDoc(doc(db, "doctors", doctorProfile.id), {
+      if (normalizedPhone && normalizedPhone.length !== 10) {
+        setError("Doctor phone number must contain exactly 10 digits.");
+        return;
+      }
+
+      const nextDoctorProfile = {
         name: profileForm.name.trim(),
         specialization: specializationArray.length ? specializationArray : [profileForm.specialization.trim()],
-        phone: profileForm.phone.trim(),
-        availability: profileForm.availability.trim(),
+        phone: normalizedPhone,
+        availability: trimmedAvailability,
         updatedAt: serverTimestamp(),
-      });
+      };
+
+      await updateDoc(doc(db, "doctors", doctorProfile.id), nextDoctorProfile);
 
       await updateDoc(doc(db, "users", auth.currentUser.uid), {
         name: profileForm.name.trim(),
+        specialization:
+          specializationArray[0] || profileForm.specialization.trim() || "General",
         updatedAt: serverTimestamp(),
       });
+
+      setDoctorProfile((current) =>
+        current
+          ? {
+              ...current,
+              ...nextDoctorProfile,
+              specializationLabel: normalizeSpecialization(nextDoctorProfile.specialization),
+            }
+          : current
+      );
+      setProfileForm((current) => ({
+        ...current,
+        name: profileForm.name.trim(),
+        specialization: normalizeSpecialization(nextDoctorProfile.specialization),
+        phone: normalizedPhone,
+        availability: trimmedAvailability,
+      }));
+      setError("");
     } catch (saveError) {
       console.error("Failed to update doctor profile", saveError);
       setError("Unable to update doctor profile.");

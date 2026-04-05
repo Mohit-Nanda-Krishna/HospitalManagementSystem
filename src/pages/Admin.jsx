@@ -78,6 +78,14 @@ function normalizePhoneNumber(phoneValue) {
   return String(phoneValue || "").replace(/\D/g, "").slice(0, 10);
 }
 
+function normalizeLabel(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
 const inventoryData = [
   { item: "N95 Masks", remaining: 42, threshold: 60, vendor: "MediSafe Supplies" },
   { item: "Syringes", remaining: 110, threshold: 120, vendor: "CareLine Pharma" },
@@ -127,10 +135,10 @@ function formatDisplayDate(dateValue) {
 
 function formatSpecialization(specialization) {
   if (Array.isArray(specialization)) {
-    return specialization.join(", ");
+    return specialization.map((item) => normalizeLabel(item)).join(", ");
   }
 
-  return specialization || "General";
+  return normalizeLabel(specialization) || "General";
 }
 
 function getDoctorDepartment(doctor) {
@@ -139,8 +147,8 @@ function getDoctorDepartment(doctor) {
   }
 
   return Array.isArray(doctor.specialization)
-    ? doctor.specialization[0] || ""
-    : doctor.specialization || "";
+    ? normalizeLabel(doctor.specialization[0]) || ""
+    : normalizeLabel(doctor.specialization) || "";
 }
 
 function getPatientDisplayName(patient) {
@@ -554,7 +562,7 @@ function AdminPanel() {
       const payload = {
         uid: createdDoctorUser.uid,
         name: name.trim(),
-        specialization: [specialization.trim()],
+        specialization: [normalizeLabel(specialization)],
         email: normalizedEmail,
         phone: normalizedPhone,
         availability: availability.trim(),
@@ -570,7 +578,7 @@ function AdminPanel() {
         name: name.trim(),
         email: normalizedEmail,
         role: "doctor",
-        specialization: specialization.trim(),
+        specialization: normalizeLabel(specialization),
         approved: true,
         createdAt: serverTimestamp(),
       });
