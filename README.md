@@ -1,6 +1,6 @@
 # Hospital Management System (HMS)
 
-View our website : vithmsproject.vercel.app/ 
+View our website : [https://vithms.vercel.app](vithmsproject.vercel.app/) 
 
 A comprehensive, multi-portal web application for hospital operations, built with **React 19**, **Vite 7**, and **Firebase (Auth & Firestore)**.
 
