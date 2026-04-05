@@ -854,12 +854,6 @@ function AdminPanel() {
               </button>
             ))}
           </nav>
-
-          <div className="admin-sidebar-note">
-            <p className="admin-section-eyebrow">Shift Summary</p>
-            <strong>Morning Admin Team</strong>
-            <span>Admissions are steady and outpatient volume is highest in cardiology and pediatrics.</span>
-          </div>
         </aside>
 
         <section className="admin-main">
