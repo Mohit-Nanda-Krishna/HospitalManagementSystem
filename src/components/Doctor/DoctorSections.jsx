@@ -459,10 +459,7 @@ export function DoctorProfileSection({
             <label>
               <span>Specialization</span>
               <input
-                onChange={(event) =>
-                  setProfileForm((current) => ({ ...current, specialization: event.target.value }))
-                }
-                required
+                readOnly
                 type="text"
                 value={profileForm.specialization}
               />
@@ -487,9 +484,7 @@ export function DoctorProfileSection({
             <label>
               <span>Availability</span>
               <input
-                onChange={(event) =>
-                  setProfileForm((current) => ({ ...current, availability: event.target.value }))
-                }
+                readOnly
                 type="text"
                 value={profileForm.availability}
               />

@@ -344,12 +344,7 @@ function DoctorDashboard() {
 
     try {
       setProfileSaving(true);
-      const specializationArray = profileForm.specialization
-        .split(",")
-        .map((item) => normalizeSpecialization(item))
-        .filter(Boolean);
       const normalizedPhone = normalizePhoneNumber(profileForm.phone);
-      const trimmedAvailability = profileForm.availability.trim();
 
       if (normalizedPhone && normalizedPhone.length !== 10) {
         setError("Doctor phone number must contain exactly 10 digits.");
@@ -358,9 +353,7 @@ function DoctorDashboard() {
 
       const nextDoctorProfile = {
         name: profileForm.name.trim(),
-        specialization: specializationArray.length ? specializationArray : [profileForm.specialization.trim()],
         phone: normalizedPhone,
-        availability: trimmedAvailability,
         updatedAt: serverTimestamp(),
       };
 
@@ -368,8 +361,6 @@ function DoctorDashboard() {
 
       await updateDoc(doc(db, "users", auth.currentUser.uid), {
         name: profileForm.name.trim(),
-        specialization:
-          specializationArray[0] || profileForm.specialization.trim() || "General",
         updatedAt: serverTimestamp(),
       });
 
@@ -385,9 +376,7 @@ function DoctorDashboard() {
       setProfileForm((current) => ({
         ...current,
         name: profileForm.name.trim(),
-        specialization: normalizeSpecialization(nextDoctorProfile.specialization),
         phone: normalizedPhone,
-        availability: trimmedAvailability,
       }));
       setError("");
     } catch (saveError) {
